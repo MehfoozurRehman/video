@@ -234,3 +234,23 @@ function svgEl(inner, { x = 0, y = 0, w = W, h = H, vb = null, stroke = '#D6A58C
     <g fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</g></svg>`, parent);
   return s;
 }
+
+// ---------- continuity helpers ----------
+// A layer with an explicit stacking order (z): chapters 0, frame 20, finale 40, hero phone 50, portals 60, labels 90.
+function zlayer(z, cls = '') { const e = layer(cls); e.style.zIndex = z; return e; }
+// On-stage rect of a phone's screen when it sits flat (no rotation) centred at (x, y) with scale s.
+function screenRect(p, x, y = 540, s = 1) {
+  const w = p.sw * s, h = p.sh * s, R = p.pw * 0.17, f = Math.round(p.pw * 0.013), b = Math.round(p.pw * 0.03);
+  return { l: x - w / 2, t: y - h / 2, w, h, r: (R - f - b) * s };
+}
+const insetFor = (r) => `inset(${r.t}px ${W - r.l - r.w}px ${H - r.t - r.h}px ${r.l}px round ${r.r}px)`;
+const FULL = 'inset(0px 0px 0px 0px round 0px)';
+// Full-frame layer grows out of a rect (e.g. the phone screen) / shrinks back into one.
+function portalOpen(e, t, rect, dur = 0.9) {
+  tl.set(e, { autoAlpha: 1 }, t);
+  tl.fromTo(e, { clipPath: insetFor(rect) }, { clipPath: FULL, duration: dur, ease: 'power3.inOut', immediateRender: false }, t);
+}
+function portalClose(e, t, rect, dur = 0.9, from = FULL) {
+  tl.fromTo(e, { clipPath: from }, { clipPath: insetFor(rect), duration: dur, ease: 'power3.inOut', immediateRender: false }, t);
+  tl.to(e, { autoAlpha: 0, duration: 0.2, ease: 'none' }, t + dur - 0.2);
+}
