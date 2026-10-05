@@ -1,6 +1,6 @@
 # ZOOD — App Launch Film
 
-A 3:21 landscape (1920×1080, 60fps) launch film for the ZOOD mobile app, built as code:
+A 2:54 landscape (1920×1080, 60fps) launch film for the ZOOD mobile app, built as code:
 an HTML/CSS stage animated by a single paused GSAP timeline, rendered frame-by-frame with
 headless Chromium (Playwright) and encoded with ffmpeg.
 
@@ -14,12 +14,12 @@ headless Chromium (Playwright) and encoded with ffmpeg.
 | `src/boot.js` | Grain/vignette, asset preloading, `__seek(t)` API, `?play` live preview |
 | `render/render.mjs` | Parallel frame renderer → MP4 with VO |
 | `render/still.mjs` | Render stills at given times for review |
-| `tools/vo-words.json` | Word-level timings of the voiceover (forced alignment) |
+| `src/vo.js` / `tools/vo-words.json` | Word-level timings of the edited voiceover (forced alignment); scenes cue off them via `at('phrase')` |
 
 ## Assets (not in git)
 The repository is public, so client material is not committed. Place it in `src/assets/`:
 `fonts/` (ITF Huwiya Arabic TTFs), `screens/` (app screens), `photos/` (brand-book imagery),
-`brand/` (logo PNGs, App Store / Google Play SVGs), `audio/vo.mp3`.
+`brand/` (logo PNGs, App Store / Google Play SVGs), `audio/vo-edit.wav` (voiceover with pauses tightened and 1.1× tempo).
 
 ## Usage
 ```bash
@@ -30,5 +30,6 @@ node render/render.mjs --fps 60 --workers 4 --out out/ZOOD_App_Film_1080p60.mp4
 Open `src/index.html?play` in a browser and click to preview in real time with the VO.
 
 ## Editing
-Copy and timings live in `src/scenes.js`. Each block is headed with its time range, and every
-cue is keyed to a VO word time (see `tools/vo-words.json`).
+Copy and timings live in `src/scenes.js`. Every cue is keyed to a spoken phrase with
+`at('phrase', occurrence)` / `after('phrase')`, so re-cutting the VO only needs a re-alignment
+(regenerate `src/vo.js`).

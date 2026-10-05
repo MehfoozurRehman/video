@@ -189,3 +189,48 @@ function kinkLines(parent, { n = 14, x0 = 0, x1 = W, h = H, color = 'rgba(214,16
 const ICON = {
   check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
+
+// ---------- VO cue lookup (VO comes from vo.js) ----------
+const _norm = (s) => s.toLowerCase().replace(/[^a-z' ]/g, ' ').replace(/\s+/g, ' ').trim();
+const _VOW = (typeof VO !== 'undefined' ? VO : []).map(v => _norm(v[0]));
+function _find(phrase, k = 1) {
+  const p = _norm(phrase).split(' ');
+  let c = 0;
+  for (let i = 0; i + p.length <= _VOW.length; i++) {
+    if (p.every((x, j) => _VOW[i + j] === x) && ++c === k) return i;
+  }
+  throw new Error(`VO phrase not found: "${phrase}" #${k}`);
+}
+// start time of a spoken phrase (kth occurrence) / end time of its last word
+const at = (phrase, k = 1) => VO[_find(phrase, k)][1];
+const after = (phrase, k = 1) => VO[_find(phrase, k) + _norm(phrase).split(' ').length - 1][2];
+
+// ---------- extra motion ----------
+// Apple-style masked rise: each line clips, words slide up from below.
+function rise(e, t, { stagger = 0.05, dur = 0.85, lineGap = null } = {}) {
+  tl.set(e, { autoAlpha: 1 }, t);
+  e.querySelectorAll('.line').forEach((ln, i) => {
+    ln.style.overflow = 'hidden'; ln.style.paddingBottom = '0.12em'; ln.style.marginBottom = '-0.12em';
+    tl.fromTo(ln.querySelectorAll('.w'), { yPercent: 115, opacity: 1 }, { yPercent: 0, duration: dur, stagger, ease: 'power4.out', immediateRender: true },
+      t + (lineGap == null ? i * 0.12 : (Array.isArray(lineGap) ? lineGap[i] - t : i * lineGap)));
+  });
+  return e;
+}
+// Draw every stroke of an SVG (paths, rects, circles, lines, polylines).
+function drawAll(svg, t, dur = 1.2, stagger = 0.04, ease = 'power2.inOut') {
+  [...svg.querySelectorAll('path,rect,circle,line,polyline,ellipse')].filter(n => !n.hasAttribute('data-nodraw')).forEach((n, i) => {
+    const L = n.getTotalLength ? n.getTotalLength() : 400;
+    gsap.set(n, { strokeDasharray: L + 1, strokeDashoffset: L + 1 });
+    tl.fromTo(n, { strokeDashoffset: L + 1 }, { strokeDashoffset: 0, duration: dur, ease, immediateRender: false }, t + i * stagger);
+  });
+}
+// Slow camera drift on a layer's content.
+function drift(e, t0, t1, from = 1.0, to = 1.045, x = 0) {
+  tl.fromTo(e, { scale: from, x: 0 }, { scale: to, x, duration: t1 - t0, ease: 'none', immediateRender: false }, t0);
+}
+// Line-art helper: inline SVG on the stage.
+function svgEl(inner, { x = 0, y = 0, w = W, h = H, vb = null, stroke = '#D6A58C', sw = 2, style = '' } = {}, parent) {
+  const s = el(`<svg class="abs" width="${w}" height="${h}" viewBox="${vb || `0 0 ${w} ${h}`}" style="left:${x}px;top:${y}px;overflow:visible;${style}">
+    <g fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</g></svg>`, parent);
+  return s;
+}

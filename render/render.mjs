@@ -40,7 +40,7 @@ async function worker(w) {
 }
 const parts = (await Promise.all([...Array(workers).keys()].map(worker))).filter(Boolean);
 fs.writeFileSync(path.join(tmp, 'list.txt'), parts.map(p => `file '${p}'`).join('\n'));
-const audio = path.join(ROOT, 'src/assets/audio/vo.mp3');
+const audio = path.join(ROOT, 'src/assets/audio/vo-edit.wav');
 await new Promise((res, rej) => spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', path.join(tmp, 'list.txt'),
   '-ss', String(start), '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '320k', '-af', `apad`, '-t', String(end - start),
   '-movflags', '+faststart', out], { stdio: 'inherit' }).on('close', c => c ? rej(c) : res()));

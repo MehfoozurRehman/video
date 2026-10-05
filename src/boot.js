@@ -26,7 +26,7 @@ window.__ready = (async () => {
 })();
 // Live preview: open index.html?play to watch in real time with the voiceover.
 if (location.search.includes('play')) {
-  const audio = new Audio('assets/audio/vo.mp3');
+  const audio = new Audio('assets/audio/vo-edit.wav');
   document.addEventListener('click', () => { audio.play(); const t0 = performance.now();
     const loop = () => { window.__seek(audio.currentTime || (performance.now() - t0) / 1000); requestAnimationFrame(loop); }; loop(); }, { once: true });
 }

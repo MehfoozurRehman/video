@@ -1,32 +1,26 @@
-// ZOOD app film — full timeline. Times are seconds into the voiceover
-// (word timings from tools/vo-words.json, force-aligned to the VO).
+// ZOOD app film v2 — full timeline. Every cue is tied to a spoken phrase via at()/after()
+// (word timings in vo.js, force-aligned to assets/audio/vo-edit.wav: pauses tightened, 1.1× tempo).
 
-// Full-width centred text.
+// ---------------------------------------------------------------- helpers
 const ctext = (s, cls, top, parent, extra = '') => text(s, cls, `left:0;width:${W}px;top:${top}px;text-align:center;${extra}`, parent);
 const ltext = (s, cls, left, top, parent, extra = '') => text(s, cls, `left:${left}px;top:${top}px;${extra}`, parent);
 
-function swapWords(list, parent, mk) {
-  // list: [[str, t], ...]; each replaces the previous.
+function swapWords(list, parent, mk, { useRise = false } = {}) {
   const els = list.map(([s]) => mk(s));
   els.forEach((e, i) => {
-    reveal(e, list[i][1], { stagger: 0.04, dur: 0.8 });
-    if (i < list.length - 1) hide(e, list[i + 1][1] - 0.12, 0.35, -18);
+    useRise ? rise(e, list[i][1], { stagger: 0.04, dur: 0.6 }) : reveal(e, list[i][1], { stagger: 0.04, dur: 0.7 });
+    if (i < list.length - 1) hide(e, list[i + 1][1] - 0.1, 0.3, -18);
   });
   return els;
 }
-
-function chapterTitle(word, t, { left = null, top = 440, parent, color = 'cream' } = {}) {
+function chapterTitle(word, t, { left = null, top = 440, parent, color = 'cream', hold = 0.75 } = {}) {
   const e = left == null ? ctext(word, `h0 ${color}`, top, parent, 'letter-spacing:.04em')
                          : ltext(word, `h0 ${color}`, left, top, parent, 'letter-spacing:.04em');
-  reveal(e, t, { stagger: 0, dur: 0.7, blur: 24, y: 10 });
-  tl.fromTo(e, { scale: 1.06 }, { scale: 1, duration: 1.2, ease: 'power2.out', immediateRender: false }, t);
-  tl.to(e, { autoAlpha: 0, filter: 'blur(14px)', duration: 0.45, ease: EASE_IN }, t + 0.85);
+  rise(e, t, { stagger: 0.02, dur: 0.7 });
+  tl.to(e, { autoAlpha: 0, filter: 'blur(14px)', duration: 0.35, ease: EASE_IN }, t + hold);
 }
-
 const chapterLabels = [];
-function chapterLabel(num, word, tIn, tOut, color = 'cream') {
-  chapterLabels.push([num, word, tIn, tOut, color]);
-}
+const chapterLabel = (num, word, tIn, tOut, color = 'cream') => chapterLabels.push([num, word, tIn, tOut, color]);
 
 function chip(html, x, y, parent, cls = '') {
   const c = el(`<div class="chip ${cls}" style="left:${x}px;top:${y}px">${html}</div>`, parent);
@@ -34,117 +28,128 @@ function chip(html, x, y, parent, cls = '') {
   return c;
 }
 function pop(e, t, from = { y: 30, scale: 0.92 }) {
-  tl.fromTo(e, { autoAlpha: 0, filter: 'blur(8px)', ...from }, { autoAlpha: 1, filter: 'blur(0px)', y: 0, x: 0, scale: 1, duration: 0.7, ease: 'back.out(1.4)', immediateRender: false }, t);
+  tl.fromTo(e, { autoAlpha: 0, filter: 'blur(8px)', ...from }, { autoAlpha: 1, filter: 'blur(0px)', y: 0, x: 0, scale: 1, duration: 0.6, ease: 'back.out(1.5)', immediateRender: false }, t);
   return e;
 }
-function out(e, t, dur = 0.45) { tl.to(e, { autoAlpha: 0, filter: 'blur(8px)', duration: dur, ease: EASE_IN }, t); }
-// Move a phone (centre position + 3D pose).
-function pose(p, t, { x, y = 540, ry = 0, rx = 0, s = 1, dur = 1.0, ease = 'power3.inOut' } = {}) {
-  const v = { rotationY: ry, rotationX: rx, scale: s, duration: dur, ease };
+function out(e, t, dur = 0.4) { tl.to(e, { autoAlpha: 0, filter: 'blur(8px)', duration: dur, ease: EASE_IN }, t); }
+function pose(p, t, { x, y = 540, ry = 0, rx = 0, rz = 0, s = 1, dur = 0.9, ease = 'power3.inOut' } = {}) {
+  const v = { rotationY: ry, rotationX: rx, rotationZ: rz, scale: s, duration: dur, ease };
   if (x != null) { v.left = x - p.pw / 2; v.top = y - p.phh / 2; }
   tl.to(p, v, t);
 }
-function setPose(p, { x, y = 540, ry = 0, rx = 0, s = 1 }) {
-  gsap.set(p, { left: x - p.pw / 2, top: y - p.phh / 2, rotationY: ry, rotationX: rx, scale: s, transformPerspective: 2600 });
+function setPose(p, { x, y = 540, ry = 0, rx = 0, rz = 0, s = 1 }) {
+  gsap.set(p, { left: x - p.pw / 2, top: y - p.phh / 2, rotationY: ry, rotationX: rx, rotationZ: rz, scale: s, transformPerspective: 2600 });
+}
+// Same as setPose but applied on the timeline at time t (for mid-film repositioning).
+function setPoseAt(p, t, { x, y = 540, ry = 0, rx = 0, rz = 0, s = 1 }) {
+  tl.set(p, { left: x - p.pw / 2, top: y - p.phh / 2, rotationY: ry, rotationX: rx, rotationZ: rz, scale: s }, t);
 }
 function photoCard(src, { x, y, w, h, radius = 32, pos = 'center' }, parent) {
   const c = el(`<div class="tile" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${radius}px;box-shadow:0 40px 90px rgba(0,0,0,.35)"></div>`, parent);
-  const ph = photo(src, { w, h, pos }, c);
-  c.ph = ph;
+  c.ph = photo(src, { w, h, pos }, c);
   return c;
 }
-
+// Brand-line sweep: kinked rose lines race across the frame (chapter transition).
+function lineSweep(t, parent, { n = 9, color = 'rgba(214,165,140,.85)', dir = 1 } = {}) {
+  const box = el('<div class="layer" style="pointer-events:none"></div>', parent || stage);
+  gsap.set(box, { autoAlpha: 0 });
+  const { paths } = kinkLines(box, { n, color, width: 2.2, seed: Math.round(t * 10), dx: 60 });
+  tl.set(box, { autoAlpha: 1 }, t);
+  paths.forEach((p, i) => {
+    const L = p.getTotalLength();
+    gsap.set(p, { strokeDasharray: `${L * 0.35} ${L}`, strokeDashoffset: L * 0.35 });
+    tl.fromTo(p, { strokeDashoffset: L * 0.35 }, { strokeDashoffset: -L, duration: 0.9, ease: 'power2.inOut', immediateRender: false }, t + (dir > 0 ? i : n - i) * 0.035);
+  });
+  tl.set(box, { autoAlpha: 0 }, t + 1.3);
+}
 const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#7a4e40"/><stop offset=".5" stop-color="#E6BFA4"/><stop offset="1" stop-color="#A27063"/></linearGradient></defs>`;
 
 // =====================================================================
-// S1  0.0 – 16.6   "Luxury … More time for what truly matters."
+// S1  "Luxury … More time for what truly matters."
 // =====================================================================
 {
-  const L = layer('bg-navy'); show(L, 0, 16.9, 1.4, 0.3);
-  const svg = el(`<svg class="abs" width="1920" height="1080" style="left:0;top:0">${ROSE_GRAD_SVG}<path d="${CURVE_D}" fill="none" stroke="url(#rg)" stroke-width="2.5"/></svg>`, L);
-  strokeDraw(svg.querySelector('path'), 0.4, 3.6);
-  tl.to(svg, { autoAlpha: 0, duration: 0.6 }, 4.4);
+  const T0 = at('because true luxury');
+  const L = layer('bg-navy'); show(L, 0, T0 + 0.5, 1.0, 0.3);
+  const D = el('<div class="layer"></div>', L); drift(D, 0, 4.2, 1.0, 1.05);
+  const svg = el(`<svg class="abs" width="1920" height="1080" style="left:0;top:0">${ROSE_GRAD_SVG}<path d="${CURVE_D}" fill="none" stroke="url(#rg)" stroke-width="2.5"/></svg>`, D);
+  strokeDraw(svg.querySelector('path'), 0.2, 2.6);
+  tl.to(svg, { autoAlpha: 0, duration: 0.4 }, at('but luxury') - 0.2);
+  const lux = ctext('Luxury.', 'h0 cream', 440, D, 'font-size:190px');
+  reveal(lux, 0.05, { stagger: 0, dur: 1.4, blur: 30, y: 16 });
+  tl.fromTo(lux, { letterSpacing: '0.14em' }, { letterSpacing: '0.02em', duration: 3.6, ease: 'power2.out', immediateRender: false }, 0.05);
+  const sub = ctext('Always at the heart of [ZOOD.]', 'h3 cream', 680, D, 'opacity:.85');
+  rise(sub, at('it has always'));
+  hide(lux, at('but luxury') - 0.25, 0.4); hide(sub, at('but luxury') - 0.25, 0.4);
 
-  const lux = ctext('Luxury.', 'h0 cream', 440, L, 'font-size:190px');
-  reveal(lux, 0.15, { stagger: 0, dur: 1.8, blur: 30, y: 16 });
-  tl.fromTo(lux, { letterSpacing: '0.14em' }, { letterSpacing: '0.02em', duration: 4.4, ease: 'power2.out', immediateRender: false }, 0.15);
-  const sub = ctext('Always at the heart of [ZOOD.]', 'h3 cream', 680, L, 'opacity:.85');
-  reveal(sub, 1.85, { stagger: 0.08 });
-  hide(lux, 4.55, 0.6); hide(sub, 4.5, 0.5);
-
-  // "In every detail." over copper macro
   const Lc = el('<div class="layer"></div>', L); gsap.set(Lc, { autoAlpha: 0 });
   const cp = photo(PH('copper.jpg'), {}, Lc);
   el('<div class="layer shade-all"></div>', Lc);
-  show(Lc, 4.6, 7.45, 1.0, 0.6);
-  kenburns(cp, 4.6, 8.2, 1.22, 1.06);
-  const det = ctext('In every [detail.]', 'h1 cream', 480, Lc);
-  reveal(det, 4.95);
+  show(Lc, at('but luxury') - 0.3, at('more presence') - 0.25, 0.6, 0.4);
+  kenburns(cp, at('but luxury') - 0.3, at('more presence') + 0.4, 1.25, 1.05, { from: { rotation: -2 }, to: { rotation: 0 } });
+  rise(ctext('In every [detail.]', 'h1 cream', 480, Lc), at('in every detail'));
 
-  // "More ___" with photo card
   const Ls = el('<div class="layer bg-navy-soft"></div>', L); gsap.set(Ls, { autoAlpha: 0 });
-  show(Ls, 7.45, null, 0.6);
-  const more = ltext('[More]', 'h1', 170, 350, Ls, 'font-size:110px');
-  reveal(more, 7.78, { stagger: 0 });
-  const words = [['presence.', 7.95], ['living.', 9.5], ['personalization.', 10.86], ['comfort.', 12.76], ['time for what|truly matters.', 14.15]];
-  swapWords(words, Ls, (s) => ltext(s, 'h1 cream', 170, 480, Ls, 'font-size:96px'));
+  show(Ls, at('more presence') - 0.3, null, 0.4);
+  rise(ltext('[More]', 'h1', 170, 350, Ls, 'font-size:110px'), at('more presence'));
+  const words = [['presence.', at('presence')], ['living.', at('living')], ['personalization.', at('personalization')], ['comfort.', at('comfort')], ['time for what|truly matters.', at('time for what')]];
+  swapWords(words, Ls, (s) => ltext(s, 'h1 cream', 170, 480, Ls, 'font-size:96px'), { useRise: true });
   const card = el(`<div class="tile" style="left:1080px;top:110px;width:680px;height:860px;border-radius:40px;box-shadow:0 50px 120px rgba(0,0,0,.45)"></div>`, Ls);
-  const imgs = ['city-view.jpg', 'walk-portrait.jpg', 'wood-wall.jpg', 'corridor.jpg', 'copper-wall.jpg'];
-  imgs.forEach((im, i) => {
+  ['city-view.jpg', 'walk-portrait.jpg', 'wood-wall.jpg', 'corridor.jpg', 'copper-wall.jpg'].forEach((im, i) => {
     const p = photo(PH(im), { w: 680, h: 860 }, card);
-    const t = words[i][1] - 0.1;
-    tl.fromTo(p, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.9, ease: 'power3.inOut', immediateRender: true }, t);
-    kenburns(p, t, t + 3.2, 1.18, 1.04);
+    const t = words[i][1] - 0.12;
+    tl.fromTo(p, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power3.inOut', immediateRender: true }, t);
+    kenburns(p, t, t + 2.4, 1.2, 1.04);
   });
-  tl.fromTo(card, { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 1.0, ease: EASE, immediateRender: false }, 7.6);
+  tl.fromTo(card, { autoAlpha: 0, y: 60, rotationY: -14, transformPerspective: 2000 }, { autoAlpha: 1, y: 0, rotationY: -6, duration: 0.9, ease: EASE, immediateRender: false }, at('more presence') - 0.2);
+  tl.to(card, { rotationY: 4, duration: T0 - at('more presence'), ease: 'none' }, at('more presence') + 0.7);
+  const pl = el('<div class="abs" style="left:172px;top:700px;width:560px;height:2px;background:rgba(214,165,140,.25)"><div class="f" style="height:100%;width:100%;background:#D6A58C;transform-origin:0 50%"></div></div>', Ls);
+  tl.fromTo(pl.querySelector('.f'), { scaleX: 0 }, { scaleX: 1, duration: T0 - at('more presence'), ease: 'none', immediateRender: true }, at('more presence'));
 }
 
 // =====================================================================
-// S2  16.2 – 34.4   "Because true luxury … an experience you live."
+// S2  "Because true luxury … an experience you live."
 // =====================================================================
 {
+  const T0 = at('because true luxury'), T1 = at('traditionally');
   const L = el('<div class="layer bg-cream"></div>', stage);
   gsap.set(L, { autoAlpha: 0 });
-  // kinked top edge (brand "horizontal" element)
   el(`<svg class="abs" width="1920" height="140" style="left:0;top:-139px"><path d="M0 140 L0 70 L860 70 C930 70 930 0 1000 0 L1920 0 L1920 140 Z" fill="#FBF7F3"/></svg>`, L);
-  tl.set(L, { autoAlpha: 1 }, 16.2);
-  tl.fromTo(L, { y: 1240 }, { y: 0, duration: 1.0, ease: 'power3.inOut', immediateRender: false }, 16.2);
-  tl.set(L, { autoAlpha: 0 }, 33.2);
+  tl.set(L, { autoAlpha: 1 }, T0 - 0.35);
+  tl.fromTo(L, { y: 1240 }, { y: 0, duration: 0.8, ease: 'power3.inOut', immediateRender: false }, T0 - 0.35);
+  tl.set(L, { autoAlpha: 0 }, at('it is an experience') + 1.0);
 
   const t1 = ctext('True luxury is not about|having more things.', 'h2 navy', 410, L);
-  revealLines(t1, [16.75, 18.6]); hide(t1, 20.05, 0.45);
+  rise(t1, T0 + 0.1, { lineGap: [T0 + 0.1, at('having more things')] }); hide(t1, at('it is about having') - 0.25, 0.35);
   const t2 = ctext('It is about having more of|[what is designed around you.]', 'h2 navy', 410, L);
-  revealLines(t2, [20.4, 21.8]); hide(t2, 23.7, 0.45);
+  rise(t2, at('it is about having'), { lineGap: [at('it is about having'), at('what is designed')] }); hide(t2, at('and that is exactly') - 0.25, 0.35);
 
   const arch = el(`<div class="tile" style="left:1120px;top:120px;width:620px;height:840px;border-radius:310px 310px 32px 32px"></div>`, L);
   const a1 = photo(PH('walk-portrait.jpg'), { w: 620, h: 840 }, arch);
   const a2 = photo(PH('copper-wall.jpg'), { w: 620, h: 840 }, arch);
-  tl.fromTo(arch, { clipPath: 'inset(100% 0% 0% 0% round 310px 310px 32px 32px)' }, { clipPath: 'inset(0% 0% 0% 0% round 310px 310px 32px 32px)', duration: 1.2, ease: 'power3.inOut', immediateRender: true }, 23.9);
-  kenburns(a1, 23.9, 28.5, 1.15, 1.02);
-  tl.fromTo(a2, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.9, immediateRender: true }, 27.2);
-  kenburns(a2, 27.2, 32.5, 1.12, 1.0);
+  const tA = at('and that is exactly') - 0.15, tB = at('that is why');
+  tl.fromTo(arch, { clipPath: 'inset(100% 0% 0% 0% round 310px 310px 32px 32px)' }, { clipPath: 'inset(0% 0% 0% 0% round 310px 310px 32px 32px)', duration: 0.9, ease: 'power3.inOut', immediateRender: true }, tA);
+  kenburns(a1, tA, tB + 1, 1.15, 1.02);
+  tl.fromTo(a2, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: true }, tB - 0.1);
+  kenburns(a2, tB, at('it is an experience') + 0.5, 1.12, 1.0);
 
   const h1 = ltext('That is exactly what', 'h3 navy', 170, 360, L, 'opacity:.7');
   const h2 = ltext('happiness', 'h0 navy', 160, 430, L);
   const h3 = ltext('[means.]', 'h2', 170, 620, L);
-  reveal(h1, 24.1); reveal(h2, 25.55, { stagger: 0, blur: 22 }); reveal(h3, 26.15);
-  [h1, h2, h3].forEach(e => hide(e, 27.0, 0.45));
-
+  rise(h1, at('and that is exactly')); rise(h2, at('happiness'), { stagger: 0 }); rise(h3, at('means'));
+  [h1, h2, h3].forEach(e => hide(e, tB - 0.25, 0.35));
   const pr = ltext('At [ZOOD,] luxury is|not a promise on paper.', 'h2 navy', 170, 420, L);
-  revealLines(pr, [27.25, 29.15]); hide(pr, 31.5, 0.5);
+  rise(pr, tB + 0.1, { lineGap: [tB + 0.1, at('not a promise')] }); hide(pr, at('it is an experience') - 0.3, 0.35);
 
-  // full-bleed reception
   const R = layer();
   const rp = photo(PH('reception.jpg'), {}, R);
   el('<div class="layer shade-b"></div>', R); el('<div class="layer shade-l" style="opacity:.6"></div>', R);
-  show(R, 31.55, 34.45, 0.9, 0.5);
-  kenburns(rp, 31.55, 35, 1.14, 1.0);
-  const ex = ltext('It is an experience|[you live.]', 'h1 cream', 140, 690, R);
-  revealLines(ex, [31.9, 33.0]);
+  show(R, at('it is an experience') - 0.35, T1 - 0.1, 0.6, 0.35);
+  kenburns(rp, at('it is an experience') - 0.35, T1 + 0.3, 1.16, 1.0, { from: { x: 40 }, to: { x: 0 } });
+  rise(ltext('It is an experience|[you live.]', 'h1 cream', 140, 690, R), at('it is an experience'), { lineGap: [at('it is an experience'), at('you live')] });
 }
 
 // =====================================================================
-// S3  34.3 – 45.5   "Traditionally … in one place?"
+// S3  "Traditionally … in one place?"  + skyline "We build communities."
 // =====================================================================
 const ICONS = {
   doc: '<rect x="14" y="6" width="44" height="58" rx="4"/><path d="M22 20h28M22 30h28M22 40h20M22 50h24"/>',
@@ -161,224 +166,270 @@ const ICONS = {
   loop: '<path d="M14 36a22 22 0 0 1 40-12M58 36a22 22 0 0 1-40 12"/><path d="M54 10v14H40M18 62V48h14"/>',
 };
 {
-  const L = layer('bg-navy'); show(L, 34.1, 47.6, 0.5, 0.4);
+  const T0 = at('traditionally'), TQ = at('but what if'), T1 = at('we build communities');
+  const L = layer('bg-navy'); show(L, T0 - 0.15, T1 + 1.6, 0.3, 0.3);
   const top = ctext('Traditionally, owning a property meant…', 'h3 cream', 170, L, 'opacity:.8');
-  reveal(top, 34.4); hide(top, 41.0, 0.5);
-
-  const groups = [['Paperwork.', 36.55, ['doc', 'folder', 'stamp']], ['Spreadsheets.', 37.4, ['sheet', 'chart', 'calc']],
-    ['Conversations.', 38.37, ['chat', 'mail', 'phone']], ['Endless steps.', 39.77, ['stairs', 'clock', 'loop']]];
-  const ws = swapWords(groups.map(g => [g[0], g[1]]), L, (s) => ctext(s, 'h1 cream', 480, L));
-  hide(ws[3], 41.1, 0.5);
-
+  rise(top, T0); hide(top, TQ - 0.2, 0.4);
+  const groups = [['Paperwork.', at('paperwork'), ['doc', 'folder', 'stamp']], ['Spreadsheets.', at('spreadsheets'), ['sheet', 'chart', 'calc']],
+    ['Conversations.', at('conversations'), ['chat', 'mail', 'phone']], ['Endless steps.', at('endless steps'), ['stairs', 'clock', 'loop']]];
+  const ws = swapWords(groups.map(g => [g[0], g[1]]), L, (s) => ctext(s, 'h1 cream', 480, L), { useRise: true });
+  hide(ws[3], TQ - 0.15, 0.4);
   const r = rng(11);
-  const icons = [];
-  groups.forEach(([, t, kinds], gi) => {
+  groups.forEach(([, t, kinds]) => {
     for (let i = 0; i < 11; i++) {
       let x, y;
       do { x = 80 + r() * 1700; y = 80 + r() * 880; } while (x > 420 && x < 1420 && y > 380 && y < 700);
       const s = 70 + r() * 70, rot = (r() - 0.5) * 50;
-      const k = kinds[i % 3];
-      const ic = el(`<svg class="abs" viewBox="0 0 72 72" width="${s}" height="${s}" style="left:${x}px;top:${y}px;opacity:0"><g fill="none" stroke="#D6A58C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</g></svg>`, L);
-      const ti = t + i * 0.06;
+      const ic = el(`<svg class="abs" viewBox="0 0 72 72" width="${s}" height="${s}" style="left:${x}px;top:${y}px;opacity:0"><g fill="none" stroke="#D6A58C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[kinds[i % 3]]}</g></svg>`, L);
+      const ti = t + i * 0.045;
       tl.fromTo(ic, { opacity: 0, scale: 0.5, rotation: rot - 30, x: (r() - 0.5) * 160, y: (r() - 0.5) * 160 },
-        { opacity: 0.55 + r() * 0.4, scale: 1, rotation: rot, x: 0, y: 0, duration: 0.9, ease: EASE, immediateRender: false }, ti);
-      tl.to(ic, { y: `+=${(r() - 0.5) * 60}`, rotation: `+=${(r() - 0.5) * 20}`, duration: 41.2 - ti - 0.9, ease: 'none' }, ti + 0.9);
-      tl.to(ic, { x: 960 - (x + s / 2), y: 540 - (y + s / 2), scale: 0, opacity: 0, rotation: `+=${120 + r() * 120}`, duration: 1.2, ease: 'power3.in' }, 41.25 + r() * 0.5);
-      icons.push(ic);
+        { opacity: 0.55 + r() * 0.4, scale: 1, rotation: rot, x: 0, y: 0, duration: 0.7, ease: EASE, immediateRender: false }, ti);
+      tl.to(ic, { y: `+=${(r() - 0.5) * 60}`, rotation: `+=${(r() - 0.5) * 20}`, duration: Math.max(0.3, TQ - ti - 0.7), ease: 'none' }, ti + 0.7);
+      tl.to(ic, { x: 960 - (x + s / 2), y: 540 - (y + s / 2), scale: 0, opacity: 0, rotation: `+=${120 + r() * 120}`, duration: 1.0, ease: 'power3.in' }, TQ + r() * 0.4);
     }
   });
-
   const q = ctext('What if the entire journey|could come together in [one place?]', 'h2 cream', 400, L);
-  revealLines(q, [41.5, 42.85]); hide(q, 44.85, 0.5);
-
-  const dot = el('<div class="abs" style="left:950px;top:530px;width:20px;height:20px;border-radius:50%;background:#E6BFA4;box-shadow:0 0 40px 12px rgba(230,191,164,.55)"></div>', L);
+  rise(q, TQ + 0.15, { lineGap: [TQ + 0.15, at('could come together')] }); hide(q, T1 - 0.4, 0.35);
+  const dot = el('<div class="abs" style="left:950px;top:690px;width:20px;height:20px;border-radius:50%;background:#E6BFA4;box-shadow:0 0 40px 12px rgba(230,191,164,.55)"></div>', L);
   gsap.set(dot, { autoAlpha: 0 });
-  tl.fromTo(dot, { autoAlpha: 0, scale: 0 }, { autoAlpha: 1, scale: 1, duration: 0.6, ease: 'back.out(2)', immediateRender: false }, 42.3);
-  gsap.set(dot, { top: 690 });
-  tl.to(dot, { top: 530, duration: 0.8, ease: EASE_IO }, 44.6);
-  tl.to(dot, { scale: 1.5, duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 43.9);
+  tl.fromTo(dot, { autoAlpha: 0, scale: 0 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'back.out(2)', immediateRender: false }, TQ + 0.9);
+  tl.to(dot, { top: 530, duration: 0.6, ease: EASE_IO }, T1 - 0.6);
+
+  // NEW — line-art skyline draws itself (from the animatic)
+  const bx = [[560, 120, 60], [640, 210, 70], [730, 330, 64], [815, 250, 60], [895, 420, 76], [990, 300, 66], [1075, 380, 70], [1165, 230, 62], [1245, 160, 58], [1320, 110, 56]];
+  let inner = `<path d="M 200 760 C 520 760 640 700 960 700 S 1400 640 1720 650"/>`;
+  bx.forEach(([x, h, w]) => {
+    const yb = 760 - (x - 200) / 1520 * 100 - 10;
+    inner += `<rect x="${x}" y="${yb - h}" width="${w}" height="${h}" rx="2"/>`;
+    for (let k = 0; k < Math.floor(h / 46); k++) inner += `<path d="M ${x + 14} ${yb - h + 22 + k * 46} h 10 M ${x + w - 24} ${yb - h + 22 + k * 46} h 10" stroke-width="3" data-w="1"/>`;
+  });
+  const SK = svgEl(inner, { sw: 2 }, L);
+  gsap.set(SK, { autoAlpha: 0 });
+  tl.set(SK, { autoAlpha: 1 }, T1 - 0.05);
+  drawAll(SK, T1 - 0.05, 1.0, 0.012);
+  tl.to(dot, { autoAlpha: 0, scale: 3, duration: 0.5 }, T1);
+  SK.querySelectorAll('[data-w]').forEach((p, i) => tl.to(p, { stroke: '#F3D2B8', duration: 0.2 }, T1 + 0.8 + (i % 7) * 0.08));
+  tl.to(SK, { y: -60, autoAlpha: 0, duration: 0.6, ease: EASE_IN }, at('and today') + 0.2);
+  const wb = ctext('We build [communities.]', 'h1 cream', 830, L);
+  rise(wb, T1 + 0.05); hide(wb, at('and today') + 0.1, 0.4);
 }
 
 // =====================================================================
-// S4  45.4 – 57.0   "We build communities … a smarter way to …"
-// S5  57.0 – 64.8   "Four journeys … This is the ZOOD app."
+// S4  "And today … a smarter way to …"   S5 "Four journeys … ZOOD app."
 // =====================================================================
 let hero;
 {
-  const L = layer(); show(L, 45.4, 65.4, 0.01, 0.6);
-  const bgp = photo(PH('lounge.jpg'), { pos: '50% 50%' }, L);
-  const dim = el('<div class="layer" style="background:rgba(2,12,31,.6)"></div>', L);
-  tl.fromTo(L, { clipPath: 'circle(0px at 960px 540px)' }, { clipPath: 'circle(1200px at 960px 540px)', duration: 1.6, ease: 'power3.inOut', immediateRender: false }, 45.4);
-  kenburns(bgp, 45.4, 58, 1.18, 1.02);
-  tl.to(dim, { background: 'rgba(2,12,31,.82)', duration: 1.2 }, 49.2);
-  tl.to(bgp, { filter: 'blur(14px)', duration: 1.2 }, 49.2);
+  const T0 = at('and today'), TF = at('four journeys'), TN = at('not four applications'), TO = at('one application'), TZ = at('this is the zood app');
+  const L = layer(); show(L, T0 - 0.2, at('explore every') + 0.5, 0.5, 0.5);
+  const bgp = photo(PH('lounge.jpg'), {}, L);
+  el('<div class="layer" style="background:rgba(2,12,31,.8)"></div>', L);
+  tl.set(bgp, { filter: 'blur(12px)' }, 0);
+  kenburns(bgp, T0 - 0.2, TZ + 2, 1.2, 1.05);
 
-  const c1 = ctext('We build [communities.]', 'h1 cream', 470, L);
-  reveal(c1, 45.5); hide(c1, 47.2, 0.5);
   const c2 = ctext('And today, we have built with you', 'h2 cream', 490, L);
-  reveal(c2, 47.5); hide(c2, 49.2, 0.4);
-
+  rise(c2, T0 + 0.1); hide(c2, at('a smarter way to discover') - 0.2, 0.3);
   const sw = ctext('A smarter way to', 'h3 cream', 150, L, 'opacity:.8');
-  reveal(sw, 49.4); hide(sw, 56.9, 0.4);
-  const J = [['Discover', 50.35, 'city-view.jpg', '50% 40%'], ['Own', 52.16, 'reception.jpg', '50% 50%'], ['Live', 54.01, 'walk-portrait.jpg', '50% 40%'], ['Invest', 56.0, 'copper-wall.jpg', '50% 50%']];
-  const slot = swapWords(J.map(j => [j[0] + '.', j[1]]), L, (s) => ctext(`[${s}]`, 'h1', 215, L));
-  hide(slot[3], 56.9, 0.35);
-  // last slot word hides with the S5 text
+  rise(sw, at('a smarter way to discover')); hide(sw, TF - 0.2, 0.3);
+  const J = [['Discover', at('discover'), 'city-view.jpg', '50% 40%'], ['Own', at('create'), 'reception.jpg', '50% 50%'],
+    ['Live', at('smarter way to live') + 0.5, 'walk-portrait.jpg', '50% 40%'], ['Invest', at('enjoy'), 'copper-wall.jpg', '50% 50%']];
+  const slot = swapWords(J.map(j => [j[0] + '.', j[1]]), L, (s) => ctext(`[${s}]`, 'h1', 215, L), { useRise: true });
+  hide(slot[3], TF - 0.2, 0.3);
   const cards = J.map(([name, t, im, pos], i) => {
-    const x = 255 + i * 360;
-    const c = el(`<div class="tile" style="left:${x}px;top:390px;width:330px;height:540px;border-radius:30px;box-shadow:0 40px 90px rgba(0,0,0,.5)"></div>`, L);
+    const c = el(`<div class="tile" style="left:${255 + i * 360}px;top:390px;width:330px;height:540px;border-radius:30px;box-shadow:0 40px 90px rgba(0,0,0,.5)"></div>`, L);
     photo(PH(im), { w: 330, h: 540, pos }, c);
     el('<div class="layer shade-b" style="width:100%;height:100%"></div>', c);
-    const lab = el(`<div class="abs" style="left:28px;bottom:26px"><div class="label" style="opacity:.75;font-size:15px">0${i + 1}</div><div class="h3 cream" style="font-size:40px;margin-top:6px">${name}</div></div>`, c);
-    c.lab = lab;
+    c.lab = el(`<div class="abs" style="left:28px;bottom:26px"><div class="label" style="opacity:.75;font-size:15px">0${i + 1}</div><div class="h3 cream" style="font-size:40px;margin-top:6px">${name}</div></div>`, c);
     gsap.set(c, { autoAlpha: 0 });
-    tl.fromTo(c, { autoAlpha: 0, y: 90, rotationX: 18, transformPerspective: 1600 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 1.0, ease: EASE, immediateRender: false }, 49.5 + i * 0.12);
+    tl.fromTo(c, { autoAlpha: 0, y: 90, rotationX: 18, transformPerspective: 1600 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 0.8, ease: EASE, immediateRender: false }, at('a smarter way to discover') + i * 0.1);
     return c;
   });
-  J.forEach(([, t], k) => {
-    cards.forEach((c, i) => tl.to(c, { filter: i === k ? 'brightness(1.05)' : 'brightness(.42)', scale: i === k ? 1.04 : 0.98, duration: 0.5, ease: EASE_IO }, t - 0.05));
-  });
-  tl.to(cards, { filter: 'brightness(1)', scale: 1, duration: 0.5 }, 56.95);
+  J.forEach(([, t], k) => cards.forEach((c, i) => tl.to(c, { filter: i === k ? 'brightness(1.05)' : 'brightness(.42)', scale: i === k ? 1.05 : 0.97, y: i === k ? -14 : 0, duration: 0.4, ease: EASE_IO }, t - 0.05)));
+  tl.to(cards, { filter: 'brightness(1)', scale: 1, y: 0, duration: 0.4 }, TF - 0.1);
 
-  // ---- S5
-  const fj = ctext('Four [journeys.]', 'h2 cream', 170, L); reveal(fj, 57.05); hide(fj, 58.2, 0.35);
-  const na = ctext('Not four applications.', 'h2 cream', 170, L); reveal(na, 58.4); hide(na, 60.1, 0.35);
-  const oa = ctext('[One] application.', 'h2 cream', 170, L); reveal(oa, 60.3); hide(oa, 61.6, 0.4);
+  const fj = ctext('Four [journeys.]', 'h2 cream', 170, L); rise(fj, TF); hide(fj, TN - 0.15, 0.3);
+  const na = ctext('Not four applications.', 'h2 cream', 170, L); rise(na, TN); hide(na, TO - 0.15, 0.3);
+  const oa = ctext('[One] application.', 'h2 cream', 170, L); rise(oa, TO); hide(oa, TZ - 0.1, 0.3);
   cards.forEach((c, i) => {
-    tl.to(c.lab, { autoAlpha: 0, duration: 0.3 }, 58.3);
-    tl.to(c, { left: 960 + (i - 1.5) * 250 - 90, top: 520, width: 180, height: 180, borderRadius: 44, duration: 1.0, ease: 'power3.inOut' }, 58.4 + i * 0.05);
-    tl.to(c, { left: 870, top: 520, scale: 0.6, autoAlpha: 0, duration: 0.7, ease: 'power3.in' }, 60.25 + (i === 0 || i === 3 ? 0 : 0.08));
+    tl.to(c.lab, { autoAlpha: 0, duration: 0.25 }, TN - 0.1);
+    tl.to(c, { left: 960 + (i - 1.5) * 250 - 90, top: 520, width: 180, height: 180, borderRadius: 44, duration: 0.8, ease: 'power3.inOut' }, TN + i * 0.04);
+    tl.to(c, { left: 870, top: 520, scale: 0.6, autoAlpha: 0, duration: 0.55, ease: 'power3.in' }, TO - 0.05 + (i === 0 || i === 3 ? 0 : 0.06));
   });
   const icon = el(`<div class="abs" style="left:850px;top:500px;width:220px;height:220px;border-radius:54px;background:linear-gradient(150deg,#123a6e,#041E42 60%);box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1.5px rgba(230,191,164,.45);display:flex;align-items:center;justify-content:center"><img src="${A('brand/symbol-white.png')}" style="width:120px"></div>`, L);
   gsap.set(icon, { autoAlpha: 0 });
-  tl.fromTo(icon, { autoAlpha: 0, scale: 0.4 }, { autoAlpha: 1, scale: 1, duration: 0.8, ease: 'back.out(1.6)', immediateRender: false }, 60.75);
-  tl.to(icon, { scale: 2.2, autoAlpha: 0, duration: 0.7, ease: 'power2.in' }, 61.55);
+  tl.fromTo(icon, { autoAlpha: 0, scale: 0.4 }, { autoAlpha: 1, scale: 1, duration: 0.6, ease: 'back.out(1.6)', immediateRender: false }, TO + 0.35);
+  tl.to(icon, { autoAlpha: 0, scale: 0.7, duration: 0.35 }, TZ - 0.35);
+
+  // NEW — line phone sketches itself, then becomes the real iPhone (from the animatic)
+  const LP = svgEl(`<rect x="782" y="170" width="356" height="740" rx="62"/><rect x="900" y="196" width="120" height="30" rx="15"/>
+      <path d="M 840 560 C 890 520 930 580 960 560 S 1040 520 1080 550"/>`, { sw: 2.4 }, L);
+  const lpz = el('<div class="abs label" style="left:0;width:1920px;top:600px;text-align:center;font-size:30px;letter-spacing:.6em;color:#E6BFA4">ZOOD</div>', L);
+  gsap.set([LP, lpz], { autoAlpha: 0 });
+  tl.set(LP, { autoAlpha: 1 }, TZ - 0.35);
+  drawAll(LP, TZ - 0.35, 0.8, 0.08);
+  tl.fromTo(lpz, { autoAlpha: 0, letterSpacing: '1.2em' }, { autoAlpha: 1, letterSpacing: '.6em', duration: 0.6, ease: EASE, immediateRender: false }, TZ + 0.1);
+  tl.to([LP, lpz], { autoAlpha: 0, scale: 1.04, duration: 0.45 }, TZ + 0.8);
 
   const tz = ltext('This is|the [ZOOD] app.', 'h1 cream', 180, 400, L);
-  revealLines(tz, [61.95, 62.6]); hide(tz, 64.2, 0.5);
+  rise(tz, TZ + 0.6, { lineGap: [TZ + 0.6, at('zood app') + 0.1] }); hide(tz, at('explore every') - 0.5, 0.35);
 }
-
-// Hero phone used through S5 → Discover
 {
-  const L = layer('persp'); show(L, 61.5, 92.8, 0.3, 0.5);
+  const TZ = at('this is the zood app');
+  const L = layer('persp'); show(L, TZ + 0.7, at('so you can find') + 0.3, 0.3, 0.3);
   hero = phone(SCR('splash.jpg'), { parent: L });
-  setPose(hero, { x: 960, y: 610, ry: -40, s: 0.45 });
-  tl.fromTo(hero, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, immediateRender: false }, 61.6);
-  pose(hero, 61.6, { x: 1250, ry: -18, s: 1, dur: 1.4, ease: 'power3.out' });
-  pose(hero, 63.0, { x: 1250, ry: 14, dur: 3.0, ease: 'sine.inOut' });
-  sheen(hero, 62.6, 1.6);
+  setPose(hero, { x: 960, y: 540, ry: 0, s: 0.85 });
+  tl.fromTo(hero, { filter: 'brightness(2) blur(6px)' }, { filter: 'brightness(1) blur(0px)', duration: 0.7, ease: 'power2.out', immediateRender: false }, TZ + 0.7);
+  pose(hero, TZ + 0.9, { x: 1250, ry: -16, s: 1, dur: 1.1, ease: 'power3.inOut' });
+  sheen(hero, TZ + 1.3, 1.2);
 }
 
 // =====================================================================
-// 01 DISCOVER  64.3 – 96.6
+// 01 DISCOVER
 // =====================================================================
 {
-  const L = layer(); show(L, 64.2, 96.7, 0.3, 0.4);
-  chapterTitle('Discover', 64.3, { left: 160, top: 440, parent: L });
-  chapterLabel('01', 'Discover', 65.4, 92.6);
+  const T0 = at('explore every'), TE = at('so you can find'), TV = at('verify your identity');
+  const L = layer(); show(L, T0 - 0.6, TV + 0.4, 0.3, 0.3);
+  lineSweep(T0 - 0.6, L);
+  chapterTitle('Discover', T0 - 0.25, { left: 1000, top: 440, parent: L, hold: 0.75 });
+  chapterLabel('01', 'Discover', T0 + 0.5, TE);
 
-  pose(hero, 65.2, { x: 620, ry: 12, dur: 1.2 });
-  swap(hero, SCR('onboarding.jpg'), 65.5);
+  // NEW — radar rings behind the phone (the animatic's discovery engine)
+  const RR = svgEl([0, 1, 2, 3].map(() => `<circle cx="620" cy="540" r="120" data-nodraw="1"/>`).join(''), { sw: 1.5 }, L);
+  gsap.set(RR, { autoAlpha: 0 });
+  tl.to(RR, { autoAlpha: 1, duration: 0.4 }, T0 + 0.3);
+  RR.querySelectorAll('circle').forEach((c, i) => tl.fromTo(c, { attr: { r: 120 }, opacity: 0.9 }, { attr: { r: 640 }, opacity: 0, duration: 2.4, ease: 'power1.out', repeat: 2, immediateRender: true }, T0 + 0.3 + i * 0.6));
+  tl.to(RR, { autoAlpha: 0, duration: 0.4 }, at('then tap') - 0.3);
+
+  pose(hero, T0 - 0.75, { x: 620, ry: 12, dur: 0.9 });
+  swap(hero, SCR('onboarding.jpg'), T0 - 0.2);
   const e1 = ltext('Explore every destination|[with complete clarity.]', 'h2 cream', 1000, 280, L);
-  revealLines(e1, [65.45, 66.75]);
+  rise(e1, T0 + 0.6, { lineGap: [T0 + 0.6, at('with complete clarity')] });
   const lst = ltext('Layouts.|Views.|Neighborhood.', 'h2 cream', 1000, 520, L, 'line-height:1.35');
-  revealLines(lst, [68.4, 69.5, 70.72]);
-  focusLine(lst, 0, 68.4); focusLine(lst, 1, 69.5); focusLine(lst, 2, 70.72);
-  swap(hero, SCR('map.jpg'), 68.35);
-  swap(hero, SCR('city3d.jpg'), 69.45);
-  tl.to(hero.cur, { scale: 1.28, transformOrigin: '50% 42%', duration: 2.2, ease: 'power2.inOut' }, 70.6);
-  hide(e1, 72.1, 0.45); hide(lst, 72.1, 0.45);
+  rise(lst, at('layouts'), { lineGap: [at('layouts'), at('views'), at('neighborhood')] });
+  focusLine(lst, 0, at('layouts')); focusLine(lst, 1, at('views')); focusLine(lst, 2, at('neighborhood'));
+  swap(hero, SCR('map.jpg'), at('layouts') - 0.1);
+  swap(hero, SCR('city3d.jpg'), at('views') - 0.1);
+  tl.to(hero.cur, { scale: 1.28, transformOrigin: '50% 42%', duration: 1.8, ease: 'power2.inOut' }, at('neighborhood'));
+  hide(e1, at('then tap') - 0.3, 0.35); hide(lst, at('then tap') - 0.3, 0.35);
 
   // tap · rotate · choose · walk through
-  pose(hero, 72.1, { x: 470, ry: 16, dur: 1.0 });
-  swap(hero, SCR('walkthrough.png'), 72.4);
-  tap(hero, 0.2, 0.235, 73.0);
+  pose(hero, at('then tap') - 0.3, { x: 470, ry: 16, dur: 0.8 });
+  swap(hero, SCR('walkthrough.png'), at('then tap') - 0.1);
+  tap(hero, 0.2, 0.235, at('tap'));
   const tr = ltext('Tap.|Rotate.|Choose.|Walk through.', 'h2 cream', 1490, 300, L, 'line-height:1.4');
-  revealLines(tr, [73.02, 73.8, 75.0, 76.22]);
-  focusLine(tr, 0, 73.02); focusLine(tr, 1, 73.8); focusLine(tr, 2, 75.0); focusLine(tr, 3, 76.22);
+  rise(tr, at('tap'), { lineGap: [at('tap'), at('rotate'), at('choose your unit'), at('walk through')] });
+  focusLine(tr, 0, at('tap')); focusLine(tr, 1, at('rotate')); focusLine(tr, 2, at('choose your unit')); focusLine(tr, 3, at('walk through'));
   const mw = el('<div class="abs persp" style="left:740px;top:280px;width:680px;height:520px"></div>', L);
   const model = crop(SCR('walkthrough.png'), [0.06, 0.175, 0.94, 0.475], 640, { radius: 26, style: 'left:20px;top:20px;box-shadow:0 60px 120px rgba(0,0,0,.6)' }, mw);
   gsap.set(model, { autoAlpha: 0 });
-  tl.fromTo(model, { autoAlpha: 0, x: -420, scale: 0.45, rotationX: 0, rotationZ: 0 }, { autoAlpha: 1, x: 0, scale: 1, rotationX: 52, rotationZ: -24, duration: 1.1, ease: 'power3.out', immediateRender: false }, 73.55);
-  tl.to(model, { rotationZ: 22, duration: 2.6, ease: 'sine.inOut' }, 74.4);
-  const pin = el('<div class="abs" style="left:57%;top:46%;width:26px;height:26px;margin:-13px;border-radius:50%;background:#E6BFA4;box-shadow:0 0 0 10px rgba(230,191,164,.35)"></div>', model);
-  gsap.set(pin, { autoAlpha: 0 });
-  tl.fromTo(pin, { autoAlpha: 0, scale: 0 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'back.out(2)', immediateRender: false }, 75.05);
-  tl.to(model, { rotationX: 0, rotationZ: 0, scale: 3.2, autoAlpha: 0, duration: 1.0, ease: 'power3.in' }, 76.25);
-  pose(hero, 76.2, { x: -300, ry: 30, dur: 1.0, ease: 'power3.in' });
-  hide(tr, 76.9, 0.5);
+  tl.fromTo(model, { autoAlpha: 0, x: -420, scale: 0.45, rotationX: 0, rotationZ: 0 }, { autoAlpha: 1, x: 0, scale: 1, rotationX: 52, rotationZ: -24, duration: 0.9, ease: 'power3.out', immediateRender: false }, at('tap') + 0.25);
+  tl.to(model, { rotationZ: 24, duration: at('choose your unit') - at('rotate') + 0.2, ease: 'sine.inOut' }, at('rotate'));
+  tl.to(model, { autoAlpha: 0, scale: 0.8, duration: 0.35 }, at('choose your unit') - 0.05);
+  // NEW — stacked floors, Floor 12 lifts out (from the animatic)
+  const FL = el('<div class="abs" style="left:780px;top:250px;width:600px;height:600px"></div>', L);
+  let fl = '';
+  for (let i = 0; i < 14; i++) { const y = 470 - i * 26; fl += `<path class="fl${i}" d="M 300 ${y - 60} L 470 ${y} L 300 ${y + 60} L 130 ${y} Z"/>`; }
+  const FS = svgEl(fl, { w: 600, h: 600, sw: 1.6 }, FL);
+  gsap.set(FL, { autoAlpha: 0 });
+  tl.set(FL, { autoAlpha: 1 }, at('choose your unit'));
+  drawAll(FS, at('choose your unit'), 0.5, 0.03);
+  tl.to(FS.querySelector('.fl11'), { fill: 'rgba(214,165,140,.55)', y: -40, x: 70, duration: 0.6, ease: 'back.out(1.6)' }, at('choose your unit') + 0.6);
+  const flab = el('<div class="chip dark" style="left:450px;top:80px;font-size:22px;padding:12px 22px"><span class="dot"></span>Floor 12 · Unit A4</div>', FL);
+  gsap.set(flab, { autoAlpha: 0 }); pop(flab, at('choose your unit') + 0.8);
+  // NEW — isometric room with Modern / Classic toggle (from the animatic)
+  const RM = el('<div class="abs" style="left:760px;top:250px;width:640px;height:600px"></div>', L);
+  const RS = svgEl(`<path d="M 320 60 L 560 180 L 560 420 L 320 540 L 80 420 L 80 180 Z"/><path d="M 320 60 L 320 300 L 80 420 M 320 300 L 560 420"/>
+      <path class="sofa" d="M 170 380 L 260 425 L 260 395 L 170 350 Z" fill="rgba(214,165,140,.5)"/><ellipse cx="380" cy="400" rx="50" ry="24"/><path d="M 470 230 L 470 330"/>`, { w: 640, h: 560, sw: 1.8 }, RM);
+  const tog = el(`<div class="abs" style="left:170px;top:540px;width:300px;height:54px;border-radius:999px;border:1px solid rgba(214,165,140,.5);background:rgba(4,30,66,.6)">
+      <div class="k" style="position:absolute;left:4px;top:4px;width:144px;height:44px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
+      <div style="position:absolute;left:4px;top:0;width:144px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#041E42">Modern</div>
+      <div style="position:absolute;right:4px;top:0;width:144px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#F4EEE8">Classic</div></div>`, RM);
+  gsap.set([RM, tog], { autoAlpha: 0 });
+  const tW = at('walk through');
+  tl.to(FL, { autoAlpha: 0, duration: 0.3 }, tW - 0.35);
+  tl.set(RM, { autoAlpha: 1 }, tW - 0.2); drawAll(RS, tW - 0.2, 0.6, 0.05);
+  pop(tog, tW + 0.2);
+  tl.to(tog.querySelector('.k'), { left: 152, duration: 0.45, ease: 'power3.inOut' }, tW + 0.85);
+  tl.to(RS.querySelector('.sofa'), { fill: 'rgba(155,203,235,.45)', duration: 0.4 }, tW + 0.9);
+  tl.to(RM, { scale: 2.6, autoAlpha: 0, duration: 0.7, ease: 'power3.in' }, at('before the first') - 0.7);
+  pose(hero, at('before the first') - 0.8, { x: -300, ry: 30, dur: 0.8, ease: 'power3.in' });
+  hide(tr, at('before the first') - 0.6, 0.35);
 
   // walk through the corridor
   const C = el('<div class="layer"></div>', L); gsap.set(C, { autoAlpha: 0 });
   const cor = photo(PH('corridor.jpg'), {}, C);
   el('<div class="layer shade-b"></div>', C);
-  show(C, 76.55, 80.5, 0.7, 0.7);
-  kenburns(cor, 76.55, 81.2, 1.0, 1.35);
-  const bf = ltext('Before the first stone|is even laid,', 'h2 cream', 140, 720, C);
-  revealLines(bf, [78.2, 79.5]);
+  const tB = at('before the first'), tS = at('see the available');
+  show(C, tB - 0.35, tS + 0.1, 0.45, 0.45);
+  kenburns(cor, tB - 0.35, tS + 0.6, 1.0, 1.4);
+  const bfs = ltext('Before the first stone|is even laid,', 'h2 cream', 140, 720, C);
+  rise(bfs, tB, { lineGap: [tB, at('is even laid')] }); hide(bfs, tS - 0.3, 0.3);
 
-  // real-time availability
-  setPose(hero, { x: 2300, ry: -20 });
-  swap(hero, SCR('explore.jpg'), 80.2, 'fade');
-  pose(hero, 80.4, { x: 1300, ry: -12, dur: 1.1, ease: 'power3.out' });
-  const rt = ltext('See available units|[in real time.]', 'h2 cream', 170, 400, L);
-  revealLines(rt, [81.0, 82.45]); hide(rt, 83.5, 0.4);
-  const live = pop(chip('<span class="dot live"></span>Live availability · 95 units', 640, 230, L), 82.0);
-  out(live, 83.5);
-
-  // compare
-  pose(hero, 83.4, { x: 960, ry: 0, dur: 0.9 });
-  swap(hero, SCR('compare.png'), 83.85);
+  // real-time availability + NEW unit grid (from the animatic)
+  setPoseAt(hero, tS - 0.45, { x: 2300, ry: -20 });
+  swap(hero, SCR('explore.jpg'), tS - 0.4, 'fade');
+  pose(hero, tS - 0.3, { x: 1300, ry: -12, dur: 0.9, ease: 'power3.out' });
+  const rt = ltext('See available units|[in real time.]', 'h2 cream', 170, 250, L);
+  rise(rt, tS, { lineGap: [tS, at('in real time')] }); hide(rt, at('compare them') - 0.25, 0.3);
+  const G = el('<div class="abs" style="left:175px;top:480px;width:560px;height:330px"></div>', L);
+  const gr = rng(4), cells = [];
+  for (let rr = 0; rr < 4; rr++) for (let cc = 0; cc < 7; cc++) {
+    const c = el(`<div class="abs" style="left:${cc * 78}px;top:${rr * 78}px;width:64px;height:64px;border-radius:12px;border:1.5px solid rgba(214,165,140,.6)"></div>`, G);
+    gsap.set(c, { autoAlpha: 0 }); cells.push(c);
+    tl.fromTo(c, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', immediateRender: false }, tS + 0.1 + (rr * 7 + cc) * 0.018);
+    if (gr() < 0.45) tl.to(c, { background: 'rgba(214,165,140,.85)', duration: 0.25 }, at('in real time') + gr() * 1.3);
+  }
+  const live = pop(chip('<span class="dot live"></span>Live · 95 units available', 640, 160, L), at('in real time') + 0.3);
+  out(live, at('compare them') - 0.25);
+  [cells[9], cells[12]].forEach(c => tl.to(c, { boxShadow: '0 0 0 3px #F3D2B8', background: 'rgba(230,191,164,1)', duration: 0.3 }, at('compare them') - 0.1));
+  tl.to(G, { autoAlpha: 0, x: -60, duration: 0.35, ease: EASE_IN }, at('compare them') + 0.25);
+  pose(hero, at('compare them') - 0.2, { x: 960, ry: 0, dur: 0.8 });
+  swap(hero, SCR('compare.png'), at('compare them'));
   const cm = ltext('Compare|[side by side.]', 'h2 cream', 150, 130, L);
-  revealLines(cm, [83.9, 84.5]); hide(cm, 85.7, 0.4);
+  rise(cm, at('compare them'), { lineGap: [at('compare them'), at('side by side')] }); hide(cm, at('filter by') - 0.2, 0.3);
   const ca = crop(SCR('compare.png'), [0.03, 0.055, 0.5, 0.31], 360, { radius: 24, style: 'left:290px;top:430px;box-shadow:0 40px 90px rgba(0,0,0,.5)' }, L);
   const cb = crop(SCR('compare.png'), [0.5, 0.055, 0.97, 0.31], 360, { radius: 24, style: 'left:1270px;top:430px;box-shadow:0 40px 90px rgba(0,0,0,.5)' }, L);
   [[ca, 480], [cb, -480]].forEach(([c, dx], i) => {
     gsap.set(c, { autoAlpha: 0 });
-    tl.fromTo(c, { autoAlpha: 0, x: dx, scale: 0.6, rotationY: 0, transformPerspective: 1600 }, { autoAlpha: 1, x: 0, scale: 1, rotationY: i ? -14 : 14, duration: 0.9, ease: 'power3.out', immediateRender: false }, 84.35 + i * 0.12);
-    tl.to(c, { autoAlpha: 0, x: dx * 0.6, scale: 0.7, duration: 0.5, ease: EASE_IN }, 85.6);
+    tl.fromTo(c, { autoAlpha: 0, x: dx, scale: 0.6, rotationY: 0, transformPerspective: 1600 }, { autoAlpha: 1, x: 0, scale: 1, rotationY: i ? -14 : 14, duration: 0.75, ease: 'power3.out', immediateRender: false }, at('side by side') - 0.2 + i * 0.1);
+    tl.to(c, { autoAlpha: 0, x: dx * 0.6, scale: 0.7, duration: 0.4, ease: EASE_IN }, at('filter by') - 0.3);
   });
 
   // filter
-  swap(hero, SCR('filter.jpg'), 85.9);
-  const fl = ltext('Filter by|[what matters.]', 'h2 cream', 150, 130, L);
-  revealLines(fl, [86.0, 86.6]); hide(fl, 92.3, 0.4);
-  const chips = [['Space', 86.46, 'L', 360], ['Distance', 87.26, 'R', 380], ['Family', 88.04, 'L', 560], ['Individual', 88.79, 'R', 600], ['Your community', 91.73, 'L', 760]];
-  chips.forEach(([s, t, side, y]) => {
+  swap(hero, SCR('filter.jpg'), at('filter by') - 0.05);
+  const fl2 = ltext('Filter by|[what matters.]', 'h2 cream', 150, 130, L);
+  rise(fl2, at('filter by'), { lineGap: [at('filter by'), at('space')] }); hide(fl2, TE - 0.3, 0.3);
+  [['Space', at('space'), 'L', 360], ['Distance', at('distance'), 'R', 380], ['Family', at('family'), 'L', 560], ['Individual', at('individual'), 'R', 600], ['Your community', at('residential community'), 'L', 760]].forEach(([s, t, side, y]) => {
     const c = chip(`<span class="dot"></span>${s}`, 0, y, L, 'dark');
     if (side === 'L') { c.style.right = `${W - 700}px`; c.style.left = 'auto'; } else c.style.left = '1220px';
-    pop(c, t, { x: side === 'L' ? 60 : -60, scale: 0.9 });
-    out(c, 92.3);
+    pop(c, t, { x: side === 'L' ? 60 : -60, scale: 0.9 }); out(c, TE - 0.3);
   });
-  tap(hero, 0.25, 0.825, 86.5); tap(hero, 0.43, 0.825, 88.1); tap(hero, 0.72, 0.947, 91.95);
-  pose(hero, 92.2, { x: 960, y: 1700, ry: 0, rx: 20, dur: 0.8, ease: 'power3.in' });
+  tap(hero, 0.25, 0.825, at('space')); tap(hero, 0.43, 0.825, at('family')); tap(hero, 0.72, 0.947, at('residential community') + 0.3);
+  pose(hero, TE - 0.4, { x: 960, y: 1700, ry: 0, rx: 20, dur: 0.6, ease: 'power3.in' });
 
-  // perfect home
   const P = el('<div class="layer"></div>', L); gsap.set(P, { autoAlpha: 0 });
   const pw = photo(PH('walk-wide.jpg'), {}, P);
   el('<div class="layer shade-l"></div>', P);
-  show(P, 92.45, null, 0.7);
-  kenburns(pw, 92.45, 97, 1.15, 1.0);
-  const ph1 = ltext('Find your|[perfect home.]', 'h1 cream', 140, 340, P);
-  revealLines(ph1, [92.75, 93.6]);
-  const ph2 = ltext('Not just an empty room.', 'h3 cream', 145, 610, P, 'opacity:.85');
-  reveal(ph2, 94.85);
+  show(P, TE - 0.25, null, 0.5);
+  kenburns(pw, TE - 0.25, TV + 0.5, 1.15, 1.0, { from: { x: -30 }, to: { x: 0 } });
+  rise(ltext('Find your|[perfect home.]', 'h1 cream', 140, 340, P), TE, { lineGap: [TE, at('perfect home')] });
+  rise(ltext('Not just an empty room.', 'h3 cream', 145, 610, P, 'opacity:.85'), at('not just an empty'));
 }
 
 // =====================================================================
-// 02 OWN  96.5 – 136.8
+// 02 OWN
 // =====================================================================
 {
-  const L = layer('bg-navy-soft persp'); show(L, 96.45, 136.9, 0.5, 0.3);
-  chapterTitle('Own', 96.5, { parent: L });
-  chapterLabel('02', 'Own', 97.35, 132.0);
+  const T0 = at('verify your identity'), TH = at('when it is time'), TJ = at('you simply enjoy'), T1 = at('your home');
+  const L = layer('bg-navy-soft persp'); show(L, T0 - 0.45, T1 + 0.2, 0.35, 0.3);
+  lineSweep(T0 - 0.5, L, { dir: -1 });
+  chapterTitle('Own', T0 - 0.45, { parent: L, hold: 0.7 });
+  chapterLabel('02', 'Own', T0 + 0.4, TJ - 0.2);
   const p = phone(SCR('login.jpg'), { parent: L });
   setPose(p, { x: 2300, ry: -25 });
-  pose(p, 96.9, { x: 1260, ry: -12, dur: 1.2, ease: 'power3.out' });
+  pose(p, T0 - 0.1, { x: 1260, ry: -12, dur: 0.9, ease: 'power3.out' });
 
-  const v = ltext('Verify your identity|[in seconds.]', 'h2 cream', 170, 410, L);
-  revealLines(v, [97.4, 97.95]); hide(v, 99.7, 0.4);
-  // Face ID scan
+  const vt = ltext('Verify your identity|[in seconds.]', 'h2 cream', 170, 410, L);
+  rise(vt, T0 + 0.2, { lineGap: [T0 + 0.2, at('in seconds')] }); hide(vt, at('request information') - 0.3, 0.3);
   const scrim = ov(p, '', [0, 0, 1, 1], 'background:rgba(2,12,31,.62);z-index:12');
   const fid = ov(p, `<svg viewBox="0 0 100 100" width="100%" height="100%"><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">
     <path d="M8 26V14a6 6 0 0 1 6-6h12M74 8h12a6 6 0 0 1 6 6v12M92 74v12a6 6 0 0 1-6 6H74M26 92H14a6 6 0 0 1-6-6V74"/>
@@ -386,289 +437,340 @@ let hero;
   const scan = ov(p, '', [0.3, 0.31, 0.4, 0.004], 'background:linear-gradient(90deg,transparent,#E6BFA4,transparent);z-index:14;box-shadow:0 0 18px 4px rgba(230,191,164,.6)');
   const ok = ov(p, `<div style="display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font-size:22px;font-weight:500"><span class="tick" style="width:64px;height:64px">${ICON.check}</span>Identity verified</div>`, [0.1, 0.55, 0.8, 0.12], 'z-index:14;display:flex;justify-content:center');
   [scrim, fid, scan, ok].forEach(e => gsap.set(e, { autoAlpha: 0 }));
-  tl.fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, immediateRender: false }, 97.6);
-  tl.fromTo(fid, { autoAlpha: 0, scale: 1.3 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: EASE, immediateRender: false }, 97.7);
-  tl.fromTo(scan, { autoAlpha: 1, top: '31%' }, { top: '49%', duration: 0.55, repeat: 1, yoyo: true, ease: 'sine.inOut', immediateRender: false }, 97.9);
-  tl.to(scan, { autoAlpha: 0, duration: 0.2 }, 99.0);
-  tl.to(fid.querySelector('g'), { stroke: '#E6BFA4', duration: 0.3 }, 99.0);
-  pop(ok, 99.05);
-  tl.to([scrim, fid, ok], { autoAlpha: 0, duration: 0.35 }, 99.7);
+  const tF = T0 + 0.5;
+  tl.fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, immediateRender: false }, tF);
+  tl.fromTo(fid, { autoAlpha: 0, scale: 1.3 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: EASE, immediateRender: false }, tF + 0.05);
+  tl.fromTo(scan, { autoAlpha: 1, top: '31%' }, { top: '49%', duration: 0.45, repeat: 1, yoyo: true, ease: 'sine.inOut', immediateRender: false }, tF + 0.2);
+  tl.to(scan, { autoAlpha: 0, duration: 0.15 }, tF + 1.1);
+  tl.to(fid.querySelector('g'), { stroke: '#E6BFA4', duration: 0.25 }, tF + 1.1);
+  pop(ok, tF + 1.15);
+  tl.to([scrim, fid, ok], { autoAlpha: 0, duration: 0.3 }, at('request information') - 0.3);
 
   // request · visit · reserve
-  pose(p, 99.6, { x: 1150, ry: -12, dur: 0.8 });
-  swap(p, SCR('project.jpg'), 99.9);
+  pose(p, at('request information') - 0.4, { x: 1150, ry: -12, dur: 0.7 });
+  swap(p, SCR('project.jpg'), at('request information') - 0.15);
   const rv = ltext('Request information.|Book a dedicated visit.|[Reserve your unit.]', 'h2 cream', 170, 330, L, 'line-height:1.45');
-  revealLines(rv, [99.95, 101.5, 103.75]);
-  focusLine(rv, 0, 99.95); focusLine(rv, 1, 101.5); focusLine(rv, 2, 103.75);
-  hide(rv, 105.1, 0.45);
-  tap(p, 0.5, 0.55, 100.2);
-  const k1 = pop(chip(`<span class="tick">${ICON.check}</span>Information requested`, 1500, 300, L), 100.4);
-  const k2 = pop(chip(`<span class="tick">${ICON.check}</span>Visit booked · Thu 10:00 AM`, 1500, 400, L), 101.9);
-  swap(p, SCR('payment.jpg'), 103.55);
-  tap(p, 0.5, 0.973, 104.45);
-  const k3 = pop(chip(`<span class="tick">${ICON.check}</span>Unit A4 reserved`, 1500, 500, L), 104.6);
-  [k1, k2, k3].forEach(k => out(k, 105.1));
-  // the chips would overflow the right edge — keep them right-aligned to the frame
-  [k1, k2, k3].forEach(k => { k.style.left = 'auto'; k.style.right = '40px'; });
+  rise(rv, at('request information'), { lineGap: [at('request information'), at('book a dedicated'), at('reserve your unit')] });
+  focusLine(rv, 0, at('request information')); focusLine(rv, 1, at('book a dedicated')); focusLine(rv, 2, at('reserve your unit'));
+  hide(rv, at('review your contract') - 0.3, 0.35);
+  tap(p, 0.5, 0.55, at('request information') + 0.2);
+  const k1 = pop(chip(`<span class="tick">${ICON.check}</span>Information requested`, 0, 300, L), at('request information') + 0.4);
+  const k2 = pop(chip(`<span class="tick">${ICON.check}</span>Visit booked · Thu 10:00 AM`, 0, 400, L), at('book a dedicated') + 0.4);
+  swap(p, SCR('payment.jpg'), at('reserve your unit') - 0.15);
+  tap(p, 0.5, 0.973, at('reserve your unit') + 0.6);
+  const k3 = pop(chip(`<span class="tick">${ICON.check}</span>Unit A4 reserved`, 0, 500, L), at('reserve your unit') + 0.7);
+  [k1, k2, k3].forEach(k => { k.style.left = 'auto'; k.style.right = '40px'; out(k, at('review your contract') - 0.3); });
 
-  // contract
-  pose(p, 105.1, { x: 640, ry: 12, dur: 1.0 });
-  swap(p, SCR('esign.png'), 105.3);
-  const sg = ltext('Review your contract.|Sign it digitally|and [securely.]', 'h2 cream', 1060, 330, L, 'line-height:1.3');
-  revealLines(sg, [105.4, 106.85, 108.2]); hide(sg, 109.45, 0.45);
+  // contract — NEW swipe-to-sign paper (from the animatic) + live signature
+  const tR = at('review your contract'), tSg = at('then sign it');
+  pose(p, tR - 0.35, { x: 640, ry: 12, dur: 0.8 });
+  swap(p, SCR('esign.png'), tR - 0.1);
+  const sg = ltext('Review your contract.|Sign it digitally|and [securely.]', 'h2 cream', 1060, 140, L, 'line-height:1.3');
+  rise(sg, tR, { lineGap: [tR, tSg, at('and securely')] }); hide(sg, at('with a single platform') - 0.3, 0.35);
+  const paper = el(`<div class="card" style="left:1080px;top:470px;width:470px;height:360px;padding:34px 40px">
+      <div class="label" style="font-size:14px;color:#A27063">Sales agreement · Villa A4</div>
+      ${[90, 100, 84, 96, 70].map(w => `<div style="height:9px;border-radius:5px;background:rgba(4,30,66,.12);margin-top:22px;width:${w}%"></div>`).join('')}
+      <div class="sl" style="position:absolute;left:40px;right:40px;bottom:30px;height:56px;border-radius:999px;background:rgba(4,30,66,.08)">
+        <div class="kn" style="position:absolute;left:5px;top:5px;width:46px;height:46px;border-radius:50%;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(4,30,66,.55)">Swipe to sign</div></div></div>`, L);
+  gsap.set(paper, { autoAlpha: 0 });
+  tl.fromTo(paper, { autoAlpha: 0, y: 80, rotationX: 25, transformPerspective: 1600 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 0.7, ease: EASE, immediateRender: false }, tR + 0.2);
+  tl.to(paper.querySelector('.kn'), { left: 333, duration: 0.7, ease: 'power2.inOut' }, tSg + 0.2);
+  tl.to(paper.querySelector('.sl'), { background: 'rgba(162,112,99,.25)', duration: 0.3 }, tSg + 0.8);
   const patch = ov(p, '', [0.285, 0.565, 0.42, 0.085], 'background:#f1e9e3');
-  tl.set(patch, { clipPath: 'inset(0% 0% 0% 0%)' }, 105.3);
-  tl.to(patch, { clipPath: 'inset(0% 0% 0% 100%)', duration: 1.15, ease: 'power1.inOut' }, 107.05);
-  tap(p, 0.5, 0.815, 108.45);
-  const sb = pop(chip('<span class="tick">' + ICON.check + '</span>Signed securely', 760, 880, L), 108.75);
-  out(sb, 109.45);
+  tl.set(patch, { clipPath: 'inset(0% 0% 0% 0%)' }, tR - 0.1);
+  tl.to(patch, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.95, ease: 'power1.inOut' }, tSg + 0.2);
+  tap(p, 0.5, 0.815, at('and securely'));
+  tl.to(paper, { x: -520, y: 60, scale: 0.25, autoAlpha: 0, duration: 0.6, ease: 'power3.in' }, at('and securely') + 0.25);
+  const sb = pop(chip('<span class="tick">' + ICON.check + '</span>Signed securely', 760, 880, L), at('and securely') + 0.4);
+  out(sb, at('with a single platform') - 0.3);
 
-  // everything with you
-  pose(p, 109.4, { x: 1260, ry: -12, dur: 1.0 });
-  swap(p, SCR('profile.jpg'), 109.65);
+  // everything with you + NEW payment ring / milestones / live (from the animatic)
+  const tP = at('with a single platform');
+  pose(p, tP - 0.35, { x: 1260, ry: -12, dur: 0.8 });
+  swap(p, SCR('profile.jpg'), tP - 0.1);
   const op = ltext('One platform.|[Everything with you.]', 'h2 cream', 170, 260, L);
-  revealLines(op, [109.85, 111.85]); hide(op, 113.2, 0.4);
-  const ev = ltext('Every payment.|Every stage.|Every update.', 'h2 cream', 170, 230, L, 'line-height:1.35');
-  revealLines(ev, [113.42, 114.7, 115.98]);
-  focusLine(ev, 0, 113.42); focusLine(ev, 1, 114.7); focusLine(ev, 2, 115.98);
-  hide(ev, 117.15, 0.4);
-  tap(p, 0.5, 0.86, 113.5);
-  const infoCard = (title, big, sub, extra = '') => el(`<div class="card" style="left:170px;top:560px;width:560px;padding:34px 38px">
-      <div class="label" style="font-size:15px;color:#A27063">${title}</div>
-      <div style="font-size:52px;font-weight:400;margin-top:10px">${big}</div>
-      <div style="font-size:24px;opacity:.65;margin-top:6px">${sub}</div>${extra}</div>`, L);
-  const ic1 = infoCard('Next installment', 'SAR 18,500', '15 Sep 2026 · 7 of 12 paid',
-    '<div style="margin-top:22px;height:10px;border-radius:9px;background:#e1d7d0;overflow:hidden"><div class="bar" style="height:100%;width:58%;border-radius:9px;background:#041E42"></div></div>');
-  const ic2 = infoCard('Current stage', 'Exterior & facade', 'Stage 3 of 5 · On schedule');
-  const ic3 = infoCard('Latest update', 'Level 14 slab poured', 'Today · 2 new photos');
-  [ic1, ic2, ic3].forEach(c => gsap.set(c, { autoAlpha: 0 }));
-  pop(ic1, 113.6); tl.fromTo(ic1.querySelector('.bar'), { width: '0%' }, { width: '58%', duration: 1.0, ease: EASE, immediateRender: false }, 113.9);
-  tl.to(ic1, { autoAlpha: 0, y: -40, duration: 0.4 }, 114.7); pop(ic2, 114.8);
-  tl.to(ic2, { autoAlpha: 0, y: -40, duration: 0.4 }, 115.98); pop(ic3, 116.1);
-  out(ic3, 117.15);
+  rise(op, tP, { lineGap: [tP, at('keeps everything')] }); hide(op, at('every payment') - 0.25, 0.3);
+  const ev = ltext('Every payment.|Every stage.|Every update.', 'h2 cream', 170, 150, L, 'line-height:1.3');
+  rise(ev, at('every payment'), { lineGap: [at('every payment'), at('every stage'), at('every update')] });
+  focusLine(ev, 0, at('every payment')); focusLine(ev, 1, at('every stage')); focusLine(ev, 2, at('every update'));
+  hide(ev, at('track the progress') - 0.3, 0.3);
+  tap(p, 0.5, 0.86, at('every payment'));
+  const ring = el(`<div class="abs" style="left:170px;top:520px;width:300px;height:300px">
+      <svg width="300" height="300" viewBox="0 0 300 300">${ROSE_GRAD_SVG.replace('id="rg"', 'id="rgR"')}<circle cx="150" cy="150" r="128" fill="none" stroke="rgba(244,238,232,.12)" stroke-width="14"/>
+      <circle class="arc" cx="150" cy="150" r="128" fill="none" stroke="url(#rgR)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 150 150)" stroke-dasharray="804" stroke-dashoffset="804"/></svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="n h1 cream" style="font-size:78px">0%</div><div class="label" style="font-size:13px;opacity:.6;margin-top:6px">paid to date</div></div></div>`, L);
+  gsap.set(ring, { autoAlpha: 0 }); pop(ring, at('every payment') + 0.1);
+  tl.to(ring.querySelector('.arc'), { strokeDashoffset: 804 * 0.6, duration: 1.2, ease: 'power2.out' }, at('every payment') + 0.25);
+  count(ring.querySelector('.n'), 0, 40, at('every payment') + 0.25, 1.2, v => Math.round(v) + '%');
+  const ms = el(`<div class="abs" style="left:520px;top:640px;width:520px;height:80px">
+      <div style="position:absolute;left:12px;right:12px;top:11px;height:2px;background:rgba(244,238,232,.2)"></div>
+      <div class="pf" style="position:absolute;left:12px;top:11px;height:2px;width:0;background:#D6A58C"></div>
+      ${['Booking', 'Milestone 2', 'Milestone 3', 'Milestone 4', 'Handover'].map((s, i) => `<div class="m" style="position:absolute;left:${i * 124}px;top:0;width:24px;height:24px;border-radius:50%;border:2px solid #D6A58C;background:#041E42"></div>
+        <div class="label" style="position:absolute;left:${i * 124 - 30}px;top:38px;width:90px;text-align:center;font-size:11px;letter-spacing:.12em;opacity:.7">${s}</div>`).join('')}</div>`, L);
+  gsap.set(ms, { autoAlpha: 0 }); pop(ms, at('every stage') - 0.1);
+  tl.to(ms.querySelector('.pf'), { width: 260, duration: 0.8, ease: 'power2.inOut' }, at('every stage'));
+  [...ms.querySelectorAll('.m')].slice(0, 3).forEach((m, i) => tl.to(m, { background: '#D6A58C', duration: 0.2 }, at('every stage') + i * 0.28));
+  const upd = pop(chip('<span class="dot live"></span>Update · Level 14 slab poured', 520, 520, L, 'dark'), at('every update'));
+  [ring, ms, upd].forEach(e => out(e, at('track the progress') - 0.3));
 
   // construction tracking
-  pose(p, 117.1, { x: 640, ry: 12, dur: 1.0 });
-  swap(p, SCR('construction.png'), 117.35);
+  const tT = at('track the progress');
+  pose(p, tT - 0.35, { x: 640, ry: 12, dur: 0.8 });
+  swap(p, SCR('construction.png'), tT - 0.1);
   const sh = p.sh;
   const bar = ov(p, `<div style="position:absolute;left:0;right:0;top:30%;height:46%;border-radius:20px;background:#e1d7d0;overflow:hidden"><div class="f" style="height:100%;width:0%;background:#0b3058;border-radius:20px"></div></div>`, [0.30, 0.394, 0.635, 0.024], 'background:#f3ede8');
   const pct = ov(p, `<span class="n" style="font-size:${sh * 0.0225}px;font-weight:600;color:#0b2a55;line-height:1">0%</span>`, [0.172, 0.39, 0.12, 0.026], 'background:#f3ede8;display:flex;align-items:center');
-  tl.fromTo(bar.querySelector('.f'), { width: '0%' }, { width: '65.7%', duration: 1.9, ease: 'power2.out', immediateRender: false }, 117.75);
-  count(pct.querySelector('.n'), 0, 68, 117.75, 1.9, v => Math.round(v) + '%');
+  tl.fromTo(bar.querySelector('.f'), { width: '0%' }, { width: '65.7%', duration: 1.6, ease: 'power2.out', immediateRender: false }, tT + 0.3);
+  count(pct.querySelector('.n'), 0, 68, tT + 0.3, 1.6, v => Math.round(v) + '%');
   const big = el('<div class="abs h0 cream" style="left:1060px;top:300px;font-size:220px"><span class="w n">0%</span></div>', L);
-  gsap.set(big, { autoAlpha: 0 });
-  const bigN = big.querySelector('.n');
-  reveal(big, 117.5, { stagger: 0 });
-  count(bigN, 0, 68, 117.75, 1.9, v => Math.round(v) + '%');
-  const cl = ltext('CONSTRUCTION PROGRESS', 'label', 1068, 270, L, 'color:#D6A58C');
-  reveal(cl, 117.5);
+  gsap.set(big, { autoAlpha: 0 }); reveal(big, tT, { stagger: 0 });
+  count(big.querySelector('.n'), 0, 68, tT + 0.3, 1.6, v => Math.round(v) + '%');
+  const cl = ltext('CONSTRUCTION PROGRESS', 'label', 1068, 270, L, 'color:#D6A58C'); reveal(cl, tT);
   const tp = ltext('Track the progress|of [construction.]', 'h2 cream', 1060, 560, L);
-  revealLines(tp, [117.45, 118.3]);
-  [big, cl, tp].forEach(e => hide(e, 119.45, 0.45));
-  // reports
+  rise(tp, tT, { lineGap: [tT, at('of construction')] });
+  [big, cl, tp].forEach(e => hide(e, at('access reports') - 0.25, 0.3));
   const ar = ltext('Access [reports.]', 'h2 cream', 1060, 190, L);
-  reveal(ar, 119.65); hide(ar, 121.0, 0.4);
+  rise(ar, at('access reports')); hide(ar, at('and watch your') - 0.25, 0.3);
   const rep = photoCard(PH('report-folder.jpg'), { x: 1060, y: 330, w: 700, h: 430, pos: '55% 50%' }, L);
   gsap.set(rep, { autoAlpha: 0 });
-  tl.fromTo(rep, { autoAlpha: 0, y: 80, rotationX: 22, transformPerspective: 1800 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 0.9, ease: EASE, immediateRender: false }, 119.75);
-  tl.to(rep, { autoAlpha: 0, y: -60, duration: 0.45, ease: EASE_IN }, 121.0);
-  const rl = pop(chip('Monthly report · PDF', 1100, 790, L), 120.3); out(rl, 121.0);
-  // live updates
+  tl.fromTo(rep, { autoAlpha: 0, y: 80, rotationX: 22, transformPerspective: 1800 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 0.7, ease: EASE, immediateRender: false }, at('access reports') + 0.05);
+  tl.to(rep, { autoAlpha: 0, y: -60, duration: 0.35, ease: EASE_IN }, at('and watch your') - 0.25);
+  const rl = pop(chip('Monthly report · PDF', 1100, 790, L), at('access reports') + 0.4); out(rl, at('and watch your') - 0.25);
+  const tW = at('and watch your');
   const lw = ltext('Watch your project|take shape, [live.]', 'h2 cream', 1060, 170, L);
-  revealLines(lw, [121.3, 122.3]); hide(lw, 124.4, 0.45);
+  rise(lw, tW, { lineGap: [tW, at('take shape')] }); hide(lw, TH - 0.35, 0.35);
   const lv = crop(SCR('construction.png'), [0, 0.012, 1, 0.2], 700, { radius: 30, style: 'left:1060px;top:420px;box-shadow:0 50px 100px rgba(0,0,0,.5)' }, L);
   gsap.set(lv, { autoAlpha: 0 });
-  tl.fromTo(lv, { autoAlpha: 0, y: 80 }, { autoAlpha: 1, y: 0, duration: 0.9, ease: EASE, immediateRender: false }, 121.2);
+  tl.fromTo(lv, { autoAlpha: 0, y: 80 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: EASE, immediateRender: false }, tW);
   const lvb = el('<div class="chip" style="left:24px;top:24px;padding:10px 20px;font-size:20px"><span class="dot live"></span>LIVE</div>', lv);
-  tl.to(lvb.querySelector('.dot'), { opacity: 0.25, duration: 0.5, repeat: 5, yoyo: true, ease: 'sine.inOut' }, 121.5);
-  const lvc = pop(chip('<span class="dot"></span>Level 14 · Slab poured today', 1100, 760, L, 'dark'), 123.1);
-  [lv, lvc].forEach(e => out(e, 124.4));
-  pose(p, 124.3, { x: -320, ry: 30, dur: 0.9, ease: 'power3.in' });
+  tl.to(lvb.querySelector('.dot'), { opacity: 0.25, duration: 0.4, repeat: 5, yoyo: true, ease: 'sine.inOut' }, tW + 0.3);
+  const lvc = pop(chip('<span class="dot"></span>Level 14 · Slab poured today', 1100, 760, L, 'dark'), at('live updates'));
+  [lv, lvc].forEach(e => out(e, TH - 0.35));
+  pose(p, TH - 0.5, { x: -320, ry: 30, dur: 0.7, ease: 'power3.in' });
 
-  // handover
-  const hd = ctext('When it is time for [handover,]|we take care of the details.', 'h2 cream', 170, L);
-  revealLines(hd, [124.75, 126.55]); hide(hd, 132.0, 0.5);
-  const ck = el(`<div class="card" style="left:610px;top:430px;width:700px;padding:26px 44px"></div>`, L);
-  const items = [['Licenses', 128.41], ['Documentation', 129.24], ['Inspections', 130.58], ['Keys handed over', 131.3]];
-  items.forEach(([s, t], i) => {
-    const row = el(`<div style="display:flex;align-items:center;gap:26px;padding:22px 0;${i ? 'border-top:1px solid rgba(4,30,66,.1)' : ''}">
-      <div style="position:relative;width:46px;height:46px"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(4,30,66,.25)"></div>
-      <div class="tk" style="position:absolute;inset:0;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center">${ICON.check.replace('<svg', '<svg width="26" height="26"')}</div></div>
-      <div style="font-size:36px;font-weight:400">${s}</div></div>`, ck);
+  // handover — NEW floor plan with snag pins (from the animatic) + checklist
+  const hd = ctext('When it is time for [handover,]|we take care of the details.', 'h2 cream', 120, L);
+  rise(hd, TH, { lineGap: [TH, at('we take care of the details')] }); hide(hd, TJ - 0.35, 0.35);
+  const FPw = el('<div class="abs" style="left:170px;top:400px;width:640px;height:440px"></div>', L);
+  const FP = svgEl(`<rect x="10" y="10" width="620" height="420" rx="6"/><path d="M 260 10 V 200 M 10 260 H 400 V 430 M 400 260 V 330 M 520 10 V 130 H 630"/>`, { w: 640, h: 440, sw: 2 }, FPw);
+  gsap.set(FPw, { autoAlpha: 0 }); tl.set(FPw, { autoAlpha: 1 }, TH + 0.2); drawAll(FP, TH + 0.2, 0.9, 0.08);
+  [[120, 140, 'Scratch · kitchen'], [480, 330], [330, 120]].forEach(([x, y, s], i) => {
+    const pin = el(`<div class="abs" style="left:${x - 14}px;top:${y - 36}px"><svg width="28" height="36" viewBox="0 0 28 36"><path d="M14 35C14 35 2 21 2 13a12 12 0 0 1 24 0c0 8-12 22-12 22z" fill="#D6A58C"/><circle cx="14" cy="13" r="4.5" fill="#041E42"/></svg></div>`, FPw);
+    gsap.set(pin, { autoAlpha: 0 });
+    tl.fromTo(pin, { autoAlpha: 0, y: -40 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'bounce.out', immediateRender: false }, at('we take care of the details') + 0.2 + i * 0.25);
+    if (s) { const tt = el(`<div class="chip" style="left:${x + 20}px;top:${y - 60}px;padding:10px 18px;font-size:18px">${s}</div>`, FPw); gsap.set(tt, { autoAlpha: 0 }); pop(tt, at('we take care of the details') + 0.6); }
+  });
+  const ip = el('<div class="chip dark" style="left:220px;top:460px;padding:10px 22px;font-size:18px"><span class="dot"></span>In progress → Resolved</div>', FPw);
+  gsap.set(ip, { autoAlpha: 0 }); pop(ip, at('licenses') - 0.2);
+  out(FPw, TJ - 0.35);
+  const ck = el(`<div class="card" style="left:1040px;top:400px;width:640px;padding:22px 40px"></div>`, L);
+  [['Licenses', at('licenses')], ['Documentation', at('documentation')], ['Inspections', at('every step in between')], ['Keys handed over', at('in between') + 0.15]].forEach(([s, t], i) => {
+    const row = el(`<div style="display:flex;align-items:center;gap:24px;padding:19px 0;${i ? 'border-top:1px solid rgba(4,30,66,.1)' : ''}">
+      <div style="position:relative;width:44px;height:44px"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(4,30,66,.25)"></div>
+      <div class="tk" style="position:absolute;inset:0;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center">${ICON.check.replace('<svg', '<svg width="24" height="24"')}</div></div>
+      <div style="font-size:34px;font-weight:400">${s}</div></div>`, ck);
     const tk = row.querySelector('.tk'); gsap.set(tk, { autoAlpha: 0 });
-    tl.fromTo(tk, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'back.out(2.2)', immediateRender: false }, t);
+    tl.fromTo(tk, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2.2)', immediateRender: false }, t);
   });
   gsap.set(ck, { autoAlpha: 0 });
-  tl.fromTo(ck, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.9, ease: EASE, immediateRender: false }, 126.9);
-  out(ck, 132.0, 0.5);
+  tl.fromTo(ck, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: EASE, immediateRender: false }, at('we take care of the details'));
+  out(ck, TJ - 0.35);
 
   // enjoy the moment
   const E = el('<div class="layer"></div>', L); gsap.set(E, { autoAlpha: 0 });
   el('<div class="abs bg-cream" style="left:0;top:0;width:960px;height:1080px"></div>', E);
   const ep = photo(PH('walk-portrait.jpg'), { x: 960, w: 960, h: 1080, pos: '50% 35%' }, E);
-  show(E, 132.1, null, 0.8);
-  kenburns(ep, 132.1, 137.2, 1.12, 1.0);
-  const en = ltext('Enjoy|the [moment.]', 'h1 navy', 140, 330, E);
-  revealLines(en, [132.45, 133.3]);
-  const er = ltext('[ZOOD] takes care of the rest.', 'h3 navy', 145, 600, E, 'opacity:.85');
-  reveal(er, 134.45);
+  show(E, TJ - 0.3, null, 0.55);
+  tl.fromTo(ep, { clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: true }, TJ - 0.3);
+  kenburns(ep, TJ - 0.3, T1 + 0.3, 1.12, 1.0);
+  rise(ltext('Enjoy|the [moment.]', 'h1 navy', 140, 330, E), TJ, { lineGap: [TJ, at('the moment')] });
+  rise(ltext('[ZOOD] takes care of the rest.', 'h3 navy', 145, 600, E, 'opacity:.85'), at('while zood'));
 }
 
 // =====================================================================
-// 03 LIVE  136.5 – 164.1
+// 03 LIVE
 // =====================================================================
 {
-  const L = layer('bg-day persp'); show(L, 136.45, 164.4, 0.5, 0.4);
+  const T0 = at('your home'), TC = at('and everything your community'), TM = at('more presence', 2), TN = at('everything you need'),
+    TA = at('as if zood'), TD = at('day and night'), T1 = at('and for those who invest');
+  const L = layer('bg-day persp'); show(L, T0 - 0.45, T1 + 0.3, 0.4, 0.35);
   const N = el('<div class="layer bg-navy"></div>', L);
-  // night bokeh
   const r = rng(21);
   for (let i = 0; i < 40; i++) {
     const s = 6 + r() * 26;
     el(`<div class="abs" style="left:${r() * 1920}px;top:${r() * 1080}px;width:${s}px;height:${s}px;border-radius:50%;background:rgba(230,191,164,${0.08 + r() * 0.25});filter:blur(${r() * 4}px)"></div>`, N);
   }
   gsap.set(N, { autoAlpha: 0 });
-  tl.to(N, { autoAlpha: 1, duration: 2.6, ease: 'sine.inOut' }, 160.3);
-
-  chapterTitle('Live', 136.5, { parent: L, color: 'navy' });
-  chapterLabel('03', 'Live', 137.25, 163.9, 'navy');
+  tl.to(N, { autoAlpha: 1, duration: 2.2, ease: 'sine.inOut' }, at('with a real sense'));
+  lineSweep(T0 - 0.5, L, { color: 'rgba(162,112,99,.8)' });
+  chapterTitle('Live', T0 - 0.45, { parent: L, color: 'navy', hold: 0.6 });
+  chapterLabel('03', 'Live', T0 + 0.3, T1 - 0.2, 'navy');
   const p = phone(SCR('profile.jpg'), { parent: L });
   setPose(p, { x: 2300, ry: -25 });
-  pose(p, 136.8, { x: 1260, ry: -12, dur: 1.2, ease: 'power3.out' });
-  const yh = ltext('Your home.|Your property.', 'h1 navy', 160, 380, L);
-  revealLines(yh, [137.05, 138.05]); hide(yh, 139.3, 0.4);
-  tap(p, 0.25, 0.42, 137.3);
-  const em = ltext('Everything that matters,|[protected securely]|and managed seamlessly.', 'h2 navy', 160, 330, L, 'line-height:1.3');
-  revealLines(em, [139.45, 141.1, 142.65]); hide(em, 144.25, 0.4);
-  const shield = el(`<svg class="abs" viewBox="0 0 72 72" width="96" height="96" style="left:165px;top:650px"><g fill="none" stroke="#A27063" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M36 6l24 9v18c0 16-10 27-24 33C22 60 12 49 12 33V15z"/><path d="M26 36l7 7 14-15"/></g></svg>`, L);
-  shield.querySelectorAll('path').forEach((pth, i) => strokeDraw(pth, 141.2 + i * 0.5, 0.9));
-  out(shield, 144.25);
+  pose(p, T0 - 0.15, { x: 1260, ry: -12, dur: 0.9, ease: 'power3.out' });
+  const yh = ltext('Your home.|Your property.', 'h1 navy', 160, 300, L);
+  rise(yh, T0 + 0.1, { lineGap: [T0 + 0.1, at('your property')] }); hide(yh, at('everything that matters') - 0.25, 0.3);
+  tap(p, 0.25, 0.42, T0 + 0.4);
+  const em = ltext('Everything that matters,|[protected securely]|and managed seamlessly.', 'h2 navy', 160, 230, L, 'line-height:1.3');
+  rise(em, at('everything that matters'), { lineGap: [at('everything that matters'), at('protected securely'), at('and managed seamlessly')] });
+  hide(em, TC - 0.3, 0.3);
+  // NEW — title deed + vault lock (from the animatic)
+  const deed = el(`<div class="card" style="left:160px;top:640px;width:330px;height:210px;padding:24px 28px">
+      <div class="label" style="font-size:13px;color:#A27063">Title deed</div>
+      ${[80, 92, 66].map(w => `<div style="height:8px;border-radius:4px;background:rgba(4,30,66,.12);margin-top:18px;width:${w}%"></div>`).join('')}
+      <div style="position:absolute;right:24px;bottom:22px;width:56px;height:56px;border-radius:50%;border:2px solid #A27063"></div></div>`, L);
+  gsap.set(deed, { autoAlpha: 0 }); pop(deed, at('protected securely') - 0.1);
+  const lock = svgEl(`<circle cx="70" cy="70" r="64"/><circle class="dash" cx="70" cy="70" r="50" stroke-dasharray="4 6" data-nodraw="1"/><rect x="48" y="66" width="44" height="34" rx="6"/><path class="sh" d="M 56 66 V 54 a 14 14 0 0 1 28 0 V 66"/>`, { x: 530, y: 676, w: 140, h: 140, stroke: '#A27063', sw: 2.4 }, L);
+  gsap.set(lock, { autoAlpha: 0 }); tl.set(lock, { autoAlpha: 1 }, at('protected securely')); drawAll(lock, at('protected securely'), 0.6, 0.06);
+  tl.fromTo(lock.querySelector('.sh'), { y: -10 }, { y: 0, duration: 0.3, ease: 'back.out(3)', immediateRender: false }, at('protected securely') + 0.7);
+  tl.to(lock.querySelector('.dash'), { rotation: 90, svgOrigin: '70 70', duration: 2, ease: 'none' }, at('protected securely'));
+  [deed, lock].forEach(e => out(e, TC - 0.3));
 
-  // community
-  pose(p, 144.25, { x: 960, ry: 0, dur: 1.0 });
-  swap(p, SCR('community.png'), 144.45);
-  const yc = ltext('Your community,|in [one place.]', 'h2 navy', 140, 400, L);
-  revealLines(yc, [144.5, 147.0]); hide(yc, 148.25, 0.35);
-  const mo = text('[More]', 'h1', 'left:100px;width:620px;top:470px;text-align:right', L);
-  reveal(mo, 148.45, { stagger: 0 }); hide(mo, 154.9, 0.45);
-  swapWords([['presence.', 148.76], ['connection.', 149.99], ['efficiency.', 151.35], ['possibilities.', 152.84]], L,
-    (s) => ltext(s, 'h1 navy', 1210, 470, L, 'font-size:88px')).forEach((e, i, a) => { if (i === a.length - 1) hide(e, 154.9, 0.45); });
-  tap(p, 0.82, 0.29, 149.2);
+  // community — NEW services pie + noticeboard (from the animatic)
+  pose(p, TC - 0.3, { x: 960, y: 590, ry: 0, s: 0.86, dur: 0.8 });
+  swap(p, SCR('community.png'), TC - 0.1);
+  const yc = ctext('Your community, in [one place.]', 'h2 navy', 40, L);
+  rise(yc, TC); hide(yc, TM - 0.25, 0.3);
+  const pie = el(`<div class="abs" style="left:180px;top:330px;width:420px;height:470px"></div>`, L);
+  const C = 2 * Math.PI * 75;
+  const PS = el(`<svg width="300" height="300" viewBox="0 0 300 300" style="position:absolute;left:60px;top:0">${[[0, 0.42, '#A27063'], [0.42, 0.72, '#C9A58C'], [0.72, 1, '#2e4a76']].map(([a, b, c]) =>
+    `<circle class="ps" cx="150" cy="150" r="75" fill="none" stroke="${c}" stroke-width="150" stroke-dasharray="0 ${C}" stroke-dashoffset="${-a * C}" data-len="${(b - a) * C}" transform="rotate(-90 150 150)"/>`).join('')}</svg>`, pie);
+  el('<div class="label navy" style="position:absolute;left:0;top:330px;width:420px;text-align:center;font-size:14px;opacity:.7">Water · Power · Shared services</div>', pie);
+  gsap.set(pie, { autoAlpha: 0 }); tl.set(pie, { autoAlpha: 1 }, TC + 0.3);
+  PS.querySelectorAll('.ps').forEach((c, i) => {
+    tl.fromTo(c, { attr: { 'stroke-dasharray': `0 ${C}` } }, { attr: { 'stroke-dasharray': `${c.dataset.len} ${C}` }, duration: 0.6, ease: 'power2.out', immediateRender: true }, TC + 0.3 + i * 0.3);
+  });
+  const nb = el(`<div class="card" style="left:1290px;top:330px;width:450px;padding:28px 32px">
+      <div class="label" style="font-size:14px;color:#A27063">Noticeboard</div>
+      ${['Community iftar · Sat', 'Family cinema night · Thu', 'Pool maintenance · Mon'].map(s => `<div class="nb" style="font-size:24px;padding:16px 0;border-top:1px solid rgba(4,30,66,.1);margin-top:10px">${s}</div>`).join('')}</div>`, L);
+  gsap.set(nb, { autoAlpha: 0 }); pop(nb, TC + 0.4);
+  nb.querySelectorAll('.nb').forEach((n, i) => tl.fromTo(n, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.4, ease: EASE, immediateRender: true }, TC + 0.8 + i * 0.35));
+  [pie, nb].forEach(e => out(e, TM - 0.3));
+  // More ___ reprise
+  const mo = text('[More]', 'h1', 'left:80px;width:640px;top:470px;text-align:right', L);
+  rise(mo, TM); hide(mo, TN - 0.3, 0.35);
+  swapWords([['presence.', at('presence', 2)], ['connection.', at('more connection') + 0.15], ['efficiency.', at('efficiency')], ['possibilities.', at('possibilities')]], L,
+    (s) => ltext(s, 'h1 navy', 1220, 470, L, 'font-size:88px'), { useRise: true }).forEach((e, i, a) => { if (i === a.length - 1) hide(e, TN - 0.3, 0.35); });
+  tap(p, 0.82, 0.29, at('more connection'));
 
   // services
-  pose(p, 154.9, { x: 1120, ry: -10, dur: 0.9 });
-  const sv = ['Cleaning', 'Delivery', 'Meeting room', 'Facilities', 'Maintenance', 'Concierge'];
-  sv.forEach((s, i) => {
+  pose(p, TN - 0.35, { x: 1120, y: 540, ry: -10, s: 1, dur: 0.8 });
+  ['Cleaning', 'Delivery', 'Meeting room', 'Facilities', 'Maintenance', 'Concierge'].forEach((s, i) => {
     const c = chip(`<span class="dot"></span>${s}`, 1420 + (i % 2) * 90, 230 + i * 110, L);
-    pop(c, 155.2 + i * 0.28, { x: -70, scale: 0.9 });
-    out(c, 157.65);
+    pop(c, TN + 0.05 + i * 0.2, { x: -70, scale: 0.9 }); out(c, TA - 0.3);
   });
   const en = ltext('Everything|you need,|[whenever you]|[need it.]', 'h2 navy', 140, 300, L);
-  revealLines(en, [155.15, 155.6, 156.45, 156.8]); hide(en, 157.65, 0.4);
+  rise(en, TN, { lineGap: [TN, TN + 0.35, at('whenever'), at('whenever') + 0.35] }); hide(en, TA - 0.3, 0.3);
 
   // always with you · chat
-  pose(p, 157.6, { x: 1000, ry: -10, dur: 1.0 });
+  pose(p, TA - 0.35, { x: 1000, ry: -10, dur: 0.8 });
   const aw = ltext('As if [ZOOD] is|always with you.', 'h2 navy', 160, 380, L);
-  revealLines(aw, [157.9, 158.75]);
-  tl.to(aw, { color: '#F4EEE8', duration: 2.0 }, 160.4);
-  hide(aw, 161.95, 0.45);
+  rise(aw, TA, { lineGap: [TA, at('always with you')] });
+  tl.to(aw, { color: '#F4EEE8', duration: 1.6 }, at('with a real sense'));
+  hide(aw, TD - 0.35, 0.35);
   const b1 = el('<div class="chip dark" style="left:auto;right:90px;top:330px;border-radius:30px 30px 8px 30px;font-weight:400">Can I book the gym at 7 PM?</div>', L);
   const b2 = el(`<div class="chip" style="left:auto;right:120px;top:440px;border-radius:30px 30px 30px 8px;font-weight:400"><img src="${A('brand/symbol-navy.png')}" style="height:28px">Booked. See you at 7 PM.</div>`, L);
   [b1, b2].forEach(b => gsap.set(b, { autoAlpha: 0 }));
-  pop(b1, 158.3, { y: 30, scale: 0.85 }); pop(b2, 159.45, { y: 30, scale: 0.85 });
-  [b1, b2].forEach(b => out(b, 163.9));
+  pop(b1, TA + 0.3, { y: 30, scale: 0.85 }); pop(b2, at('always with you') + 0.5, { y: 30, scale: 0.85 });
+  [b1, b2].forEach(b => out(b, T1 - 0.35));
   const dn = ltext('Day', 'h0', 160, 380, L, 'color:#F4EEE8');
   const dn2 = ltext('[and night.]', 'h0', 160, 560, L);
-  reveal(dn, 162.4, { stagger: 0 }); reveal(dn2, 163.1, { stagger: 0.08 });
-  [dn, dn2].forEach(e => hide(e, 164.05, 0.4));
-  pose(p, 163.9, { x: 1000, y: 1700, ry: -12, dur: 0.6, ease: 'power3.in' });
-  chapterLabels[chapterLabels.length - 1].push(160.5);   // label turns cream at night
+  rise(dn, TD - 0.1, { stagger: 0 }); rise(dn2, at('and night'));
+  [dn, dn2].forEach(e => hide(e, T1 - 0.3, 0.35));
+  pose(p, T1 - 0.45, { x: 1000, y: 1700, ry: -12, dur: 0.5, ease: 'power3.in' });
+  chapterLabels[chapterLabels.length - 1].push(at('with a real sense') + 0.3);
 }
 
 // =====================================================================
-// 04 INVEST  164.0 – 179.3
+// 04 INVEST
 // =====================================================================
 {
-  const L = layer('bg-navy persp'); show(L, 163.95, 179.6, 0.5, 0.5);
-  chapterTitle('Invest', 164.1, { parent: L });
-  chapterLabel('04', 'Invest', 164.95, 178.7);
-  const fi = ctext('For those who invest in what we build,|[there is something more.]', 'h2 cream', 420, L);
-  revealLines(fi, [164.85, 166.6]); hide(fi, 167.85, 0.45);
+  const T0 = at('and for those who invest'), TS = at('a smarter way to make'), TX = at('discover', 2);
+  const L = layer('bg-navy persp'); show(L, T0 - 0.4, TX - 0.1, 0.35, 0.4);
+  lineSweep(T0 - 0.45, L, { dir: -1 });
+  chapterTitle('Invest', T0 - 0.4, { parent: L, hold: 0.65 });
+  chapterLabel('04', 'Invest', T0 + 0.4, TX - 0.5);
+  const fi = ctext('For those who invest in what we build,|[there is something more.]', 'h2 cream', 330, L);
+  rise(fi, T0 + 0.35, { lineGap: [T0 + 0.35, at('there is something more')] }); hide(fi, TS - 0.3, 0.35);
+  // NEW — flowing lines rise into a curve (from the animatic)
+  const FLW = svgEl([0, 1, 2].map(i => `<path class="fw" d="M -40 ${720 + i * 34} C 500 ${720 + i * 34} 800 ${720 + i * 34} 1960 ${720 + i * 34}" stroke="${i ? 'rgba(155,203,235,.45)' : '#E6BFA4'}"/>`).join(''), { sw: 2.2 }, L);
+  gsap.set(FLW, { autoAlpha: 0 }); tl.set(FLW, { autoAlpha: 1 }, T0 + 0.3);
+  drawAll(FLW, T0 + 0.3, 1.0, 0.12);
+  FLW.querySelectorAll('.fw').forEach((pth, i) => tl.to(pth, { attr: { d: `M -40 ${760 + i * 34} C 600 ${760 + i * 34} 900 ${560 + i * 34} 1960 ${470 + i * 34}` }, duration: 1.2, ease: 'power2.inOut' }, at('there is something more') - 0.1));
+  tl.to(FLW, { autoAlpha: 0, duration: 0.4 }, TS - 0.2);
 
   const pb = phone(SCR('mortgage.jpg'), { parent: L });
   const p = phone(SCR('yield.png'), { parent: L });
   setPose(pb, { x: 860, y: 1700, ry: 22, s: 0.86 }); setPose(p, { x: 600, y: 1700, ry: 12 });
   tl.set(pb, { filter: 'brightness(.55)' }, 0);
-  pose(pb, 168.0, { x: 860, y: 540, ry: 22, s: 0.86, dur: 1.2, ease: 'power3.out' });
-  pose(p, 167.9, { x: 600, y: 540, ry: 12, dur: 1.2, ease: 'power3.out' });
-  sheen(p, 169.2);
+  pose(pb, TS - 0.2, { x: 860, y: 540, ry: 22, s: 0.86, dur: 0.9, ease: 'power3.out' });
+  pose(p, TS - 0.3, { x: 600, y: 540, ry: 12, dur: 0.9, ease: 'power3.out' });
+  sheen(p, TS + 0.8);
   const chart = ov(p, '', [0.13, 0.33, 0.82, 0.175], 'background:#f4efea');
-  tl.set(chart, { clipPath: 'inset(0% 0% 0% 0%)' }, 167.9);
-  tl.to(chart, { clipPath: 'inset(0% 0% 0% 100%)', duration: 1.8, ease: 'power1.inOut' }, 168.6);
-
+  tl.set(chart, { clipPath: 'inset(0% 0% 0% 0%)' }, TS - 0.3);
+  tl.to(chart, { clipPath: 'inset(0% 0% 0% 100%)', duration: 1.4, ease: 'power1.inOut' }, TS + 0.3);
   const mk = ltext('Make your property|[work for you.]', 'h2 cream', 1120, 260, L);
-  revealLines(mk, [168.1, 170.0]);
+  rise(mk, TS, { lineGap: [TS, at('work for you')] });
   const tg = el(`<div class="abs" style="left:1120px;top:560px;width:690px;height:96px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(214,165,140,.35)">
       <div class="knob" style="position:absolute;top:8px;left:8px;width:220px;height:78px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4 55%,#B5816A);box-shadow:0 10px 30px rgba(162,112,99,.45)"></div>
       ${['Long-term', 'Short stays', 'Sale'].map((s, i) => `<div class="opt" style="position:absolute;top:0;left:${8 + i * 225}px;width:220px;height:96px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:500">${s}</div>`).join('')}</div>`, L);
   const tlab = ltext('YIELD MANAGER', 'label', 1124, 518, L, 'color:#D6A58C');
   gsap.set(tg, { autoAlpha: 0 });
-  pop(tg, 170.6); reveal(tlab, 170.6);
+  pop(tg, at('long term') - 0.5); reveal(tlab, at('long term') - 0.5);
   const knob = tg.querySelector('.knob'), opts = tg.querySelectorAll('.opt');
-  gsap.set(knob, { autoAlpha: 0 });
-  const caps = [['Long-term leasing.', 171.34], ['Short stays.', 172.78], ['Or selling.', 173.94]];
+  gsap.set(knob, { autoAlpha: 0 }); gsap.set(opts, { color: 'rgba(244,238,232,.6)' });
+  const caps = [['Long-term leasing.', at('long term')], ['Short stays.', at('short stays')], ['Or selling.', at('or selling')]];
   caps.forEach(([, t], i) => {
-    if (i === 0) tl.fromTo(knob, { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', immediateRender: false }, t);
-    else tl.to(knob, { left: 8 + i * 225, duration: 0.55, ease: 'power3.inOut' }, t - 0.05);
-    opts.forEach((o, j) => tl.to(o, { color: j === i ? '#041E42' : 'rgba(244,238,232,.6)', duration: 0.3 }, t));
+    if (i === 0) tl.fromTo(knob, { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(2)', immediateRender: false }, t);
+    else tl.to(knob, { left: 8 + i * 225, duration: 0.45, ease: 'power3.inOut' }, t - 0.05);
+    opts.forEach((o, j) => tl.to(o, { color: j === i ? '#041E42' : 'rgba(244,238,232,.6)', duration: 0.25 }, t));
   });
-  gsap.set(opts, { color: 'rgba(244,238,232,.6)' });
-  swapWords([...caps, ['You choose in seconds.', 175.04], ['[ZOOD] takes care of the rest.', 176.9]], L,
-    (s) => ltext(s, 'h3 cream', 1124, 700, L)).forEach((e, i, a) => { if (i === a.length - 1) hide(e, 178.6, 0.5); });
-  tl.to(knob, { scale: 1.06, duration: 0.2, yoyo: true, repeat: 1 }, 175.2);
-  hide(mk, 178.6, 0.5); out(tg, 178.6, 0.5); out(tlab, 178.6, 0.5);
-  pose(p, 178.5, { x: 600, y: 1700, dur: 0.8, ease: 'power3.in' });
-  pose(pb, 178.55, { x: 860, y: 1700, dur: 0.8, ease: 'power3.in' });
+  swapWords([...caps, ['You choose in seconds.', at('you choose in seconds')], ['[ZOOD] takes care of the rest.', at('zood takes care of the rest', 2)]], L,
+    (s) => ltext(s, 'h3 cream', 1124, 700, L), { useRise: true }).forEach((e, i, a) => { if (i === a.length - 1) hide(e, TX - 0.5, 0.4); });
+  tl.to(knob, { scale: 1.06, duration: 0.18, yoyo: true, repeat: 1 }, at('you choose in seconds') + 0.2);
+  const inc = el('<div class="abs" style="left:1124px;top:820px"><div class="label" style="font-size:14px;color:#D6A58C">Projected rental income</div><div class="h2 cream" style="font-size:58px;margin-top:6px">SAR <span class="n">0</span></div></div>', L);
+  gsap.set(inc, { autoAlpha: 0 }); pop(inc, at('you choose in seconds'));
+  count(inc.querySelector('.n'), 0, 482650, at('you choose in seconds') + 0.1, 1.6, v => Math.round(v).toLocaleString('en-US'));
+  hide(mk, TX - 0.5, 0.4); out(tg, TX - 0.5, 0.4); out(tlab, TX - 0.5, 0.4); out(inc, TX - 0.5, 0.4);
+  pose(p, TX - 0.6, { x: 600, y: 1700, dur: 0.6, ease: 'power3.in' });
+  pose(pb, TX - 0.55, { x: 860, y: 1700, dur: 0.6, ease: 'power3.in' });
 }
 
 // =====================================================================
-// FINALE  179.0 – 201   wall of screens → bento grid → logo → end card
+// FINALE  wall of screens → bento grid → icon → logo → end card
 // =====================================================================
 const ALL = ['onboarding.jpg', 'map.jpg', 'walkthrough.png', 'compare.png', 'filter.jpg', 'explore.jpg', 'login.jpg', 'project.jpg', 'esign.png',
   'payment.jpg', 'profile.jpg', 'construction.png', 'community.png', 'gallery.jpg', 'yield.png', 'mortgage.jpg', 'city3d.jpg', 'splash.jpg'];
-const END = 201;
+const TL_LUX = at('live luxury');
+const END = Math.ceil(after('live zood') + 6.5);
 {
-  const L = layer('bg-navy'); show(L, 178.9, null, 0.6);
-  // wall
+  const TX = at('discover', 2), TDz = at('designed for the rhythm'), TB = at('because after construction'), TE = after('responsibility begins');
+  const L = layer('bg-navy'); show(L, TX - 0.5, null, 0.45);
   const wallWrap = el('<div class="layer persp" style="perspective:2200px"></div>', L);
   const wall = el('<div class="abs p3d" style="left:-520px;top:-260px;width:2960px;height:1600px"></div>', wallWrap);
-  gsap.set(wall, { rotationX: 30, rotationZ: -14, scale: 1.0 });
+  gsap.set(wall, { rotationX: 30, rotationZ: -14 });
   const r = rng(5);
   for (let row = 0; row < 3; row++) for (let col = 0; col < 11; col++) {
     const src = ALL[(row * 11 + col * 5) % ALL.length];
-    const x = col * 270 + (row % 2) * 120, y = row * 560;
-    const c = el(`<div class="tile" style="left:${x}px;top:${y}px;width:246px;height:535px;border-radius:30px;box-shadow:0 30px 70px rgba(0,0,0,.55)"><img src="${SCR(src)}" style="width:100%;height:100%;object-fit:cover"></div>`, wall);
-    tl.fromTo(c, { autoAlpha: 0, z: -600, y: 120 }, { autoAlpha: 1, z: 0, y: 0, duration: 1.2, ease: EASE, immediateRender: true }, 178.95 + r() * 0.9);
+    const c = el(`<div class="tile" style="left:${col * 270 + (row % 2) * 120}px;top:${row * 560}px;width:246px;height:535px;border-radius:30px;box-shadow:0 30px 70px rgba(0,0,0,.55)"><img src="${SCR(src)}" style="width:100%;height:100%;object-fit:cover"></div>`, wall);
+    tl.fromTo(c, { autoAlpha: 0, z: -600, y: 120 }, { autoAlpha: 1, z: 0, y: 0, duration: 1.0, ease: EASE, immediateRender: true }, TX - 0.45 + r() * 0.7);
   }
-  tl.fromTo(wall, { x: 0 }, { x: -420, duration: 6, ease: 'none', immediateRender: false }, 178.9);
+  tl.fromTo(wall, { x: 0, rotationZ: -14 }, { x: -480, rotationZ: -10, duration: TDz - TX + 1.2, ease: 'none', immediateRender: false }, TX - 0.5);
   const wshade = el('<div class="layer" style="background:radial-gradient(60% 45% at 50% 50%, rgba(2,12,31,.9) 0%, rgba(2,12,31,.55) 60%, rgba(2,12,31,.2) 100%)"></div>', L);
-  gsap.set(wshade, { autoAlpha: 0 });
-  tl.to(wshade, { autoAlpha: 1, duration: 0.6 }, 179.2);
-  swapWords([['Discover.', 179.34], ['Own.', 180.45], ['Live.', 181.51], ['[Invest.]', 182.55]], L, (s) => ctext(s, 'h0 cream', 440, L))
-    .forEach((e, i, a) => { if (i === a.length - 1) hide(e, 183.45, 0.4); });
-  tl.to([wallWrap, wshade], { autoAlpha: 0, duration: 0.7 }, 183.4);
+  gsap.set(wshade, { autoAlpha: 0 }); tl.to(wshade, { autoAlpha: 1, duration: 0.4 }, TX - 0.2);
+  swapWords([['Discover.', TX], ['Own.', at('enjoy', 3)], ['Live.', at('live', 4)], ['[Invest.]', at('dwell')]], L, (s) => ctext(s, 'h0 cream', 440, L), { useRise: true })
+    .forEach((e, i, a) => { if (i === a.length - 1) hide(e, TDz - 0.3, 0.3); });
+  tl.to([wallWrap, wshade], { autoAlpha: 0, duration: 0.5 }, TDz - 0.3);
 
-  // bento
   const B = el('<div class="layer"></div>', L);
   const tiles = [];
-  const T = (x, y, w, h, inner, bg = '#0b2a55') => {
-    const t = el(`<div class="tile" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${bg};border-radius:30px">${inner}</div>`, B);
-    tiles.push(t); return t;
-  };
+  const T = (x, y, w, h, inner, bg = '#0b2a55') => { const t = el(`<div class="tile" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${bg};border-radius:30px">${inner}</div>`, B); tiles.push(t); return t; };
   const scrTile = (src) => `<img src="${SCR(src)}" style="position:absolute;left:0;top:50%;width:100%;transform:translateY(-50%)">`;
   const lab = (s, dark) => `<div class="label" style="position:absolute;left:26px;bottom:24px;font-size:16px;color:${dark ? '#041E42' : '#F4EEE8'}">${s}</div>`;
   const shadeB = '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,12,31,0) 50%,rgba(2,12,31,.75))"></div>';
   T(48, 48, 300, 460, `<img src="${SCR('community.png')}" style="position:absolute;left:0;top:-8px;width:100%">${shadeB}${lab('Live')}`, '#F4EEE8');
-  T(48, 526, 300, 506, `<div style="position:absolute;left:30px;top:34px" class="label navy">Construction</div><div class="navy" style="position:absolute;left:24px;bottom:70px;font-size:120px;font-weight:300">68%</div><div class="navy" style="position:absolute;left:30px;bottom:36px;font-size:22px;opacity:.6">Tracked live</div>`, 'linear-gradient(160deg,#EFE4DA,#DBC8B6)');
+  const t68 = T(48, 526, 300, 506, `<div style="position:absolute;left:30px;top:34px" class="label navy">Construction</div><div class="navy" style="position:absolute;left:24px;bottom:70px;font-size:120px;font-weight:300"><span class="n">0</span>%</div><div class="navy" style="position:absolute;left:30px;bottom:36px;font-size:22px;opacity:.6">Tracked live</div>`, 'linear-gradient(160deg,#EFE4DA,#DBC8B6)');
   T(366, 48, 300, 300, `<div style="position:absolute;inset:0;background:url('${PH('city-view.jpg')}') center 35%/cover"></div>${shadeB}${lab('Discover')}`);
   T(366, 366, 300, 666, scrTile('walkthrough.png'), '#F4EEE8');
   T(684, 48, 552, 300, `<div style="position:absolute;inset:0;background:url('${PH('reception.jpg')}') center/cover"></div>${shadeB}${lab('Own')}`);
@@ -677,58 +779,64 @@ const END = 201;
   T(684, 732, 552, 300, `<img src="${SCR('yield.png')}" style="position:absolute;left:-2%;top:-${0.115 * 552 / 0.46 * 1.04}px;width:104%">${lab('Invest', true)}`, '#F4EEE8');
   T(1254, 48, 300, 666, scrTile('esign.png'), '#F4EEE8');
   T(1254, 732, 300, 300, `<img src="${A('brand/symbol-navy.png')}" style="position:absolute;left:50%;top:50%;width:150px;transform:translate(-50%,-50%)">`, '#F4EEE8');
-  T(1572, 48, 300, 300, `<div style="position:absolute;left:30px;top:34px" class="label navy">Average yield</div><div class="navy" style="position:absolute;left:24px;bottom:30px;font-size:104px;font-weight:300">7.8%</div>`, 'linear-gradient(160deg,#C4E1F4,#9BCBEB)');
+  const t78 = T(1572, 48, 300, 300, `<div style="position:absolute;left:30px;top:34px" class="label navy">Average yield</div><div class="navy" style="position:absolute;left:24px;bottom:30px;font-size:104px;font-weight:300"><span class="n">0.0</span>%</div>`, 'linear-gradient(160deg,#C4E1F4,#9BCBEB)');
   T(1572, 366, 300, 666, scrTile('map.jpg'), '#F4EEE8');
-  tiles.forEach((t, i) => {
+  tiles.forEach((t) => {
     const cx = parseFloat(t.style.left) + parseFloat(t.style.width) / 2, cy = parseFloat(t.style.top) + parseFloat(t.style.height) / 2;
-    const dx = (cx - 960) * 0.35, dy = (cy - 540) * 0.35;
     gsap.set(t, { autoAlpha: 0 });
-    tl.fromTo(t, { autoAlpha: 0, x: dx, y: dy, scale: 0.86 }, { autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 1.1, ease: 'power3.out', immediateRender: false }, 183.55 + Math.hypot(cx - 960, cy - 540) / 2600);
+    tl.fromTo(t, { autoAlpha: 0, x: (cx - 960) * 0.35, y: (cy - 540) * 0.35, scale: 0.86, rotationY: (cx - 960) / 60, transformPerspective: 2000 }, { autoAlpha: 1, x: 0, y: 0, scale: 1, rotationY: 0, duration: 0.95, ease: 'power3.out', immediateRender: false }, TDz - 0.35 + Math.hypot(cx - 960, cy - 540) / 2800);
     t._c = [cx, cy];
   });
+  count(t68.querySelector('.n'), 0, 68, TDz + 0.3, 1.3);
+  count(t78.querySelector('.n'), 0, 7.8, TDz + 0.4, 1.3, v => v.toFixed(1));
+  tl.fromTo(B, { scale: 1 }, { scale: 1.035, duration: TE - TDz + 0.5, ease: 'none', immediateRender: false }, TDz);
   const d1 = text('Designed for the rhythm|of modern life.', 'h3 cream', 'left:0;width:552px;top:110px;text-align:center', txt);
-  revealLines(d1, [184.1, 184.9]); hide(d1, 186.4, 0.4);
+  rise(d1, TDz + 0.1, { lineGap: [TDz + 0.1, at('of modern life')] }); hide(d1, TB - 0.25, 0.3);
   const d2 = text('After construction,|[responsibility begins.]', 'h3 cream', 'left:0;width:552px;top:110px;text-align:center', txt);
-  revealLines(d2, [186.6, 187.4]); hide(d2, 189.6, 0.4);
-  // collapse into the app icon
+  rise(d2, TB, { lineGap: [TB, at('responsibility begins')] });
+  // collapse: outer tiles fly into the centre while "begins" is spoken, text tile becomes the app icon
+  const TCOL = at('begins') - 0.1;
+  hide(d2, TCOL + 0.35, 0.25);
   tiles.filter(t => t !== txt).forEach((t) => {
     const [cx, cy] = t._c;
-    tl.to(t, { x: 960 - cx, y: 540 - cy, scale: 0.15, autoAlpha: 0, duration: 0.9, ease: 'power3.in' }, 189.75 + (1 - Math.hypot(cx - 960, cy - 540) / 1100) * 0.25);
+    tl.to(t, { x: 960 - cx, y: 540 - cy, scale: 0.15, autoAlpha: 0, duration: 0.55, ease: 'power3.in' }, TCOL + (1 - Math.hypot(cx - 960, cy - 540) / 1100) * 0.15);
   });
-  tl.to(txt, { left: 850, top: 430, width: 220, height: 220, borderRadius: 54, duration: 0.9, ease: 'power3.inOut' }, 189.8);
+  tl.to(txt, { left: 850, top: 430, width: 220, height: 220, borderRadius: 54, duration: 0.55, ease: 'power3.inOut' }, TCOL + 0.4);
   const sym = el(`<img src="${A('brand/symbol-white.png')}" style="position:absolute;left:50%;top:50%;width:120px;transform:translate(-50%,-50%)">`, txt);
-  gsap.set(sym, { autoAlpha: 0 });
-  tl.to(sym, { autoAlpha: 1, duration: 0.4 }, 190.3);
-  tl.to(txt, { scale: 0.5, autoAlpha: 0, duration: 0.5, ease: 'power2.in' }, 190.95);
+  gsap.set(sym, { autoAlpha: 0 }); tl.to(sym, { autoAlpha: 1, duration: 0.25 }, TCOL + 0.7);
+  tl.to(txt, { scale: 1.6, autoAlpha: 0, duration: 0.35, ease: 'power2.in' }, TL_LUX - 0.1);
 
-  // logo
-  const lg = el(`<img class="abs" src="${A('brand/logo-white.png')}" style="left:${960 - 420}px;top:${430 - 145}px;width:840px">`, L);
+  const burst = el('<div class="abs" style="left:560px;top:140px;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle, rgba(230,191,164,.55) 0%, rgba(230,191,164,0) 60%)"></div>', L);
+  gsap.set(burst, { autoAlpha: 0 });
+  tl.fromTo(burst, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1.3, duration: 0.6, ease: 'power2.out', immediateRender: false }, TL_LUX - 0.2);
+  tl.to(burst, { autoAlpha: 0, duration: 1.0 }, TL_LUX + 0.4);
+  const LG = el('<div class="abs" style="left:0;top:0;width:1920px;height:1080px"></div>', L);
+  const lg = el(`<img class="abs" src="${A('brand/logo-white.png')}" style="left:${960 - 420}px;top:${430 - 145}px;width:840px">`, LG);
   gsap.set(lg, { autoAlpha: 0 });
-  tl.fromTo(lg, { autoAlpha: 0, scale: 0.86, filter: 'blur(16px)' }, { autoAlpha: 1, scale: 1, filter: 'blur(0px)', duration: 1.2, ease: EASE, immediateRender: false }, 191.05);
+  tl.fromTo(lg, { autoAlpha: 0, scale: 0.86, filter: 'blur(16px)' }, { autoAlpha: 1, scale: 1, filter: 'blur(0px)', duration: 1.0, ease: EASE, immediateRender: false }, TL_LUX + 0.05);
+  const lsh = el(`<div class="abs" style="left:${960 - 420}px;top:${430 - 145}px;width:840px;height:291px;overflow:hidden;pointer-events:none;-webkit-mask-image:url(${A('brand/logo-white.png')});-webkit-mask-size:840px auto;-webkit-mask-repeat:no-repeat"><div class="s" style="position:absolute;top:-50%;bottom:-50%;width:160px;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.75),rgba(255,255,255,0));transform:rotate(12deg)"></div></div>`, LG);
+  tl.fromTo(lsh.querySelector('.s'), { left: -220 }, { left: 1000, duration: 1.2, ease: 'power2.inOut', immediateRender: true }, at('live zood') + 0.3);
   const svg = el(`<svg class="abs" width="1920" height="1080" style="left:0;top:0">${ROSE_GRAD_SVG.replace('id="rg"', 'id="rg2"')}<path d="M 560 655 C 760 655 820 620 960 610 S 1200 585 1360 560" fill="none" stroke="url(#rg2)" stroke-width="2.5" stroke-linecap="round"/></svg>`, L);
-  strokeDraw(svg.querySelector('path'), 191.4, 1.6);
+  strokeDraw(svg.querySelector('path'), TL_LUX, 1.3);
   const ll = ctext('Live luxury.  Live [ZOOD.]', 'h2 cream', 690, L);
-  tl.set(ll, { autoAlpha: 1 }, 191.3);
+  tl.set(ll, { autoAlpha: 1 }, TL_LUX);
   const lw = ll.querySelectorAll('.w');
-  tl.fromTo([lw[0], lw[1]], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, stagger: 0.1, ease: EASE, immediateRender: true }, 191.35);
-  tl.fromTo([lw[2], lw[3]], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, stagger: 0.12, ease: EASE, immediateRender: true }, 193.2);
+  tl.fromTo([lw[0], lw[1]], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.1, ease: EASE, immediateRender: true }, TL_LUX);
+  tl.fromTo([lw[2], lw[3]], { opacity: 0, y: 30, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.12, ease: EASE, immediateRender: true }, at('live zood'));
 
-  // end card
-  tl.to(lg, { top: 230 - 145 + 40, scale: 0.72, duration: 1.1, ease: 'power3.inOut' }, 195.6);
-  tl.to(svg, { y: -150, autoAlpha: 0.0, duration: 0.8, ease: 'power3.inOut' }, 195.6);
-  tl.to(ll, { top: 470, duration: 1.1, ease: 'power3.inOut' }, 195.6);
-  const dl = ctext('DOWNLOAD THE ZOOD APP', 'label', 650, L, 'color:#D6A58C');
-  reveal(dl, 196.3);
+  const tE = after('live zood') + 0.9;
+  tl.to(LG, { y: -160, scale: 0.72, transformOrigin: '960px 430px', duration: 1.0, ease: 'power3.inOut' }, tE);
+  tl.to(svg, { y: -150, autoAlpha: 0, duration: 0.7, ease: 'power3.inOut' }, tE);
+  tl.to(ll, { top: 470, duration: 1.0, ease: 'power3.inOut' }, tE);
+  reveal(ctext('DOWNLOAD THE ZOOD APP', 'label', 650, L, 'color:#D6A58C'), tE + 0.6);
   const badges = el(`<div class="abs" style="left:0;width:1920px;top:720px;display:flex;justify-content:center;gap:28px">
-      <img src="${A('brand/app-store.svg')}" style="height:80px;width:270px" class="bd">
-      <img src="${A('brand/google-play.svg')}" style="height:80px;width:270px" class="bd"></div>`, L);
+      <img src="${A('brand/app-store.svg')}" style="height:80px;width:270px" class="bd"><img src="${A('brand/google-play.svg')}" style="height:80px;width:270px" class="bd"></div>`, L);
   const bds = badges.querySelectorAll('.bd'); gsap.set(bds, { autoAlpha: 0 });
-  tl.fromTo(bds, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.15, ease: EASE, immediateRender: false }, 196.6);
-  const web = ctext('zood.sa', 'h3 cream', 890, L, 'font-size:28px;opacity:.6;letter-spacing:.08em');
-  reveal(web, 197.3);
+  tl.fromTo(bds, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.15, ease: EASE, immediateRender: false }, tE + 0.85);
+  reveal(ctext('zood.sa', 'h3 cream', 890, L, 'font-size:28px;opacity:.6;letter-spacing:.08em'), tE + 1.4);
   const black = el('<div class="layer" style="background:#000"></div>', L);
   gsap.set(black, { autoAlpha: 0 });
-  tl.to(black, { autoAlpha: 1, duration: 1.0, ease: 'none' }, END - 1.0);
+  tl.to(black, { autoAlpha: 1, duration: 0.9, ease: 'none' }, END - 0.9);
   tl.set({}, {}, END);
 }
 
@@ -736,13 +844,12 @@ const END = 201;
 {
   const L = el('<div class="layer" style="pointer-events:none"></div>', stage);
   chapterLabels.forEach(([num, word, tIn, tOut, color, tCream]) => {
-    const c = color === 'navy' ? '#041E42' : '#F4EEE8';
-    const e = el(`<div class="abs label" style="left:110px;top:78px;display:flex;align-items:center;gap:18px;color:${c};font-size:20px">
+    const e = el(`<div class="abs label" style="left:110px;top:78px;display:flex;align-items:center;gap:18px;color:${color === 'navy' ? '#041E42' : '#F4EEE8'};font-size:20px">
       <span style="color:#C9977F">${num}</span><span class="ln" style="display:inline-block;width:46px;height:1.5px;background:currentColor;opacity:.5"></span><span>${word}</span></div>`, L);
     gsap.set(e, { autoAlpha: 0 });
-    tl.fromTo(e, { autoAlpha: 0, x: -20 }, { autoAlpha: 0.9, x: 0, duration: 0.7, ease: EASE, immediateRender: false }, tIn);
-    tl.fromTo(e.querySelector('.ln'), { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.8, ease: EASE, immediateRender: false }, tIn + 0.1);
-    if (tCream) tl.to(e, { color: '#F4EEE8', duration: 2.0 }, tCream);
-    tl.to(e, { autoAlpha: 0, duration: 0.5 }, tOut);
+    tl.fromTo(e, { autoAlpha: 0, x: -20 }, { autoAlpha: 0.9, x: 0, duration: 0.6, ease: EASE, immediateRender: false }, tIn);
+    tl.fromTo(e.querySelector('.ln'), { scaleX: 0, transformOrigin: '0 50%' }, { scaleX: 1, duration: 0.7, ease: EASE, immediateRender: false }, tIn + 0.1);
+    if (tCream) tl.to(e, { color: '#F4EEE8', duration: 1.6 }, tCream);
+    tl.to(e, { autoAlpha: 0, duration: 0.4 }, tOut);
   });
 }
