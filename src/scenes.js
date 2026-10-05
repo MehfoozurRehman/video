@@ -65,94 +65,153 @@ function lineSweep(t, parent, { n = 9, color = 'rgba(214,165,140,.85)', dir = 1 
 const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#7a4e40"/><stop offset=".5" stop-color="#E6BFA4"/><stop offset="1" stop-color="#A27063"/></linearGradient></defs>`;
 
 // =====================================================================
-// S1+S2 — one continuous frame: "Luxury." → copper iris → photo card → arch → full-bleed reception
+// S1+S2 — continuous, high-motion opening on live ZOOD footage
+// sunrise "Luxury." → iris into facade detail → travelling frame (a new shot + layout per "More ___")
+// → arch on cream → triptych → "happiness" → paper → full-bleed "experience you live"
 // =====================================================================
 {
-  const TB = at('but luxury'), TM = at('more presence'), T0 = at('because true luxury'), TH = at('and that is exactly'),
+  const TB = at('but luxury'), TM = at('more presence'), T0 = at('because true luxury'), TA = at('it is about having'), TH = at('and that is exactly'),
     TW = at('that is why'), TX = at('it is an experience'), T1 = at('traditionally');
-  // navy opening
-  const L = layer('bg-navy'); show(L, 0, null, 1.0);
+  const tLv = at('living'), tPz = at('personalization'), tCf = at('comfort'), tTm = at('time for what');
+
+  // --- sunrise opening
+  const L = layer('bg-navy'); show(L, 0, null, 0.01);
   tl.set(L, { autoAlpha: 0 }, T0 + 1.2);
-  const D = el('<div class="layer"></div>', L); drift(D, 0, TB + 0.5, 1.0, 1.05);
+  const SR = el('<div class="layer"></div>', L);
+  vclip(SR, 'sunrise', 0, TB + 0.6, { rate: 1.3 });
+  el('<div class="layer" style="background:linear-gradient(180deg,rgba(2,12,31,.55),rgba(2,12,31,.15) 45%,rgba(2,12,31,.6))"></div>', SR);
+  tl.fromTo(SR, { scale: 1.18 }, { scale: 1.0, duration: TB + 0.6, ease: 'power1.out', immediateRender: true }, 0);
+  const D = el('<div class="layer"></div>', L);
   const svg = el(`<svg class="abs" width="1920" height="1080" style="left:0;top:0">${ROSE_GRAD_SVG}<path d="${CURVE_D}" fill="none" stroke="url(#rg)" stroke-width="2.5"/></svg>`, D);
-  strokeDraw(svg.querySelector('path'), 0.2, 2.6);
-  const lux = ctext('Luxury.', 'h0 cream', 440, D, 'font-size:190px');
-  reveal(lux, 0.05, { stagger: 0, dur: 1.4, blur: 30, y: 16 });
-  tl.fromTo(lux, { letterSpacing: '0.14em' }, { letterSpacing: '0.02em', duration: 3.6, ease: 'power2.out', immediateRender: false }, 0.05);
-  const sub = ctext('Always at the heart of [ZOOD.]', 'h3 cream', 680, D, 'opacity:.85');
+  strokeDraw(svg.querySelector('path'), 0.2, 2.4);
+  const lux = ctext('Luxury.', 'h0 cream', 440, D, 'font-size:190px;text-shadow:0 10px 60px rgba(0,0,0,.35)');
+  reveal(lux, 0.05, { stagger: 0, dur: 1.3, blur: 30, y: 16 });
+  tl.fromTo(lux, { letterSpacing: '0.16em' }, { letterSpacing: '0.02em', duration: 3.6, ease: 'power2.out', immediateRender: false }, 0.05);
+  const sub = ctext('Always at the heart of [ZOOD.]', 'h3 cream', 680, D, 'opacity:.9');
   rise(sub, at('it has always'));
-  // the period of "Luxury." opens into copper (iris)
   const PX = 1250, PY = 572;
   tl.to(lux, { scale: 1.25, transformOrigin: `${PX}px ${PY - 440}px`, autoAlpha: 0, duration: 0.8, ease: 'power2.in' }, TB - 0.3);
   tl.to([sub, svg], { autoAlpha: 0, duration: 0.4 }, TB - 0.3);
 
-  // "More ___" (navy-soft) sits underneath
+  // --- navy-soft stage for the "More" sequence
   const Ls = layer('bg-navy-soft'); show(Ls, TM - 0.4, null, 0.3);
   tl.set(Ls, { autoAlpha: 0 }, T0 + 1.2);
-  rise(ltext('[More]', 'h1', 170, 350, Ls, 'font-size:110px'), TM);
-  const words = [['presence.', at('presence')], ['living.', at('living')], ['personalization.', at('personalization')], ['comfort.', at('comfort')], ['time for what|truly matters.', at('time for what')]];
-  const ws = swapWords(words, Ls, (s) => ltext(s, 'h1 cream', 170, 480, Ls, 'font-size:96px'), { useRise: true });
-  hide(ws[4], T0 - 0.35, 0.35); hide(Ls.children[0], T0 - 0.35, 0.35);
-  const pl = el('<div class="abs" style="left:172px;top:700px;width:560px;height:2px;background:rgba(214,165,140,.25)"><div class="f" style="height:100%;width:100%;background:#D6A58C;transform-origin:0 50%"></div></div>', Ls);
-  tl.fromTo(pl.querySelector('.f'), { scaleX: 0 }, { scaleX: 1, duration: T0 - TM, ease: 'none', immediateRender: true }, TM);
-  tl.to(pl, { autoAlpha: 0, duration: 0.3 }, T0 - 0.35);
+  const moreTxt = [
+    ['[More] presence.', TM, 'h1 cream', 'left:170px;top:440px'],
+    ['[More] living.', tLv, 'h1 cream', 'left:1000px;top:440px'],
+    ['[More]|personalization.', tPz, 'h1 cream', 'left:140px;top:640px;text-shadow:0 8px 40px rgba(0,0,0,.4)'],
+    ['[More]', tCf, 'h1', 'left:40px;width:580px;top:470px;text-align:right'],
+    ['[More] time for what truly matters.', tTm, 'h2 cream', `left:0;width:${W}px;top:110px;text-align:center`],
+  ].map(([s, t, cls, st], i, arr) => {
+    const e = text(s, cls, st, Ls); rise(e, t, { stagger: 0.05, dur: 0.6 });
+    if (i < arr.length - 1 && i !== 3) hide(e, arr[i + 1][1] - 0.15, 0.3);
+    return e;
+  });
+  const cf2 = ltext('comfort.', 'h1 cream', 1300, 470, Ls); rise(cf2, tCf + 0.08);
+  hide(moreTxt[3], tTm - 0.15, 0.3); hide(cf2, tTm - 0.15, 0.3); hide(moreTxt[4], T0 - 0.3, 0.3);
 
-  // cream world slides up with the kinked brand edge
+  // --- cream world (slides up with the kinked brand edge)
   const C2 = el('<div class="layer bg-cream"></div>', stage);
   gsap.set(C2, { autoAlpha: 0 });
   el(`<svg class="abs" width="1920" height="140" style="left:0;top:-139px"><path d="M0 140 L0 70 L860 70 C930 70 930 0 1000 0 L1920 0 L1920 140 Z" fill="#FBF7F3"/></svg>`, C2);
   tl.set(C2, { autoAlpha: 1 }, T0 - 0.35);
   tl.fromTo(C2, { y: 1240 }, { y: 0, duration: 0.85, ease: 'power3.inOut', immediateRender: false }, T0 - 0.35);
   tl.set(C2, { autoAlpha: 0 }, TX + 1.0);
-  const t1 = ltext('True luxury is not about|having more things.', 'h2 navy', 170, 380, C2);
-  rise(t1, T0 + 0.1, { lineGap: [T0 + 0.1, at('having more things')] }); hide(t1, at('it is about having') - 0.25, 0.35);
-  const t2 = ltext('It is about having more of|[what is designed around you.]', 'h2 navy', 170, 380, C2);
-  rise(t2, at('it is about having'), { lineGap: [at('it is about having'), at('what is designed')] }); hide(t2, TH - 0.25, 0.35);
+  // slow kinked line pattern drifting behind everything on cream
+  const kl = kinkLines(C2, { n: 16, color: 'rgba(162,112,99,.14)', width: 2, seed: 9, dx: 50 });
+  tl.fromTo(kl.svg, { x: 0 }, { x: -260, duration: TX - T0 + 1, ease: 'none', immediateRender: false }, T0 - 0.35);
+  const t1 = ltext('True luxury is not about|having more things.', 'h2 navy', 170, 300, C2);
+  rise(t1, T0 + 0.1, { lineGap: [T0 + 0.1, at('having more things')] }); hide(t1, TA - 0.25, 0.3);
+  // floating "things" that scatter away
+  const things = [['cabinet.jpg', 190, 600, 230, 170], ['report-folder.jpg', 470, 680, 260, 160], ['copper.jpg', 760, 560, 170, 170], ['wood-wall.jpg', 300, 820, 190, 150], ['letter.jpg', 620, 860, 240, 140], ['arch.jpg', 880, 760, 150, 150]];
+  const rr = rng(31);
+  things.forEach(([src, x, y, w, h], i) => {
+    const c = photoCard(PH(src), { x, y, w, h, radius: 18 }, C2);
+    c.style.boxShadow = '0 24px 50px rgba(60,40,25,.22)';
+    gsap.set(c, { autoAlpha: 0 });
+    tl.fromTo(c, { autoAlpha: 0, y: 80, rotation: (rr() - 0.5) * 20, scale: 0.8 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, ease: EASE, immediateRender: false }, T0 + 0.2 + i * 0.07);
+    tl.to(c, { y: `-=${30 + rr() * 30}`, rotation: `+=${(rr() - 0.5) * 12}`, duration: 2.2, ease: 'sine.inOut' }, T0 + 0.9);
+    const ang = Math.atan2(y - 760, x - 560);
+    tl.to(c, { x: Math.cos(ang) * 900, y: Math.sin(ang) * 700, rotation: `+=${(rr() - 0.5) * 90}`, scale: 0.6, autoAlpha: 0, filter: 'blur(6px)', duration: 0.8, ease: 'power3.in' }, at('having more things') + 0.25 + i * 0.03);
+  });
+  const t2 = ctext('It is about having more of|[what is designed around you.]', 'h2 navy', 90, C2);
+  rise(t2, TA, { lineGap: [TA, at('what is designed')] }); hide(t2, TH - 0.25, 0.3);
   const h1 = ltext('That is exactly what', 'h3 navy', 170, 360, C2, 'opacity:.7');
   const h2 = ltext('happiness', 'h0 navy', 160, 430, C2);
   const h3 = ltext('[means.]', 'h2', 170, 620, C2);
   rise(h1, TH); rise(h2, at('happiness'), { stagger: 0 }); rise(h3, at('means'));
-  [h1, h2, h3].forEach(e => hide(e, TW - 0.25, 0.35));
-  const pr = ltext('At [ZOOD,] luxury is|not a promise on paper.', 'h2 navy', 170, 420, C2);
+  tl.fromTo(h2, { letterSpacing: '0.1em' }, { letterSpacing: '0em', duration: 1.6, ease: 'power2.out', immediateRender: false }, at('happiness'));
+  [h1, h2, h3].forEach(e => hide(e, TW - 0.25, 0.3));
+  const pr = ltext('At [ZOOD,] luxury is|not a promise on paper.', 'h2 navy', 170, 330, C2);
   rise(pr, TW + 0.1, { lineGap: [TW + 0.1, at('not a promise')] }); hide(pr, TX - 0.45, 0.3);
+  // floating sheet of "paper" that flips away
+  const paper = el(`<div class="card" style="left:190px;top:600px;width:380px;height:250px;padding:30px 34px">
+      <div class="label" style="font-size:13px;color:#A27063">Promise</div>
+      ${[92, 100, 80, 96].map(w => `<div style="height:8px;border-radius:4px;background:rgba(4,30,66,.12);margin-top:20px;width:${w}%"></div>`).join('')}</div>`, C2);
+  gsap.set(paper, { autoAlpha: 0 });
+  tl.fromTo(paper, { autoAlpha: 0, y: 60, rotationX: 30, rotationZ: -8, transformPerspective: 1400 }, { autoAlpha: 1, y: 0, rotationX: 12, rotationZ: -4, duration: 0.8, ease: EASE, immediateRender: false }, TW + 0.3);
+  tl.to(paper, { rotationY: 25, rotationZ: 3, y: -20, duration: 2.0, ease: 'sine.inOut' }, TW + 1.1);
+  tl.to(paper, { rotationY: 180, x: 500, y: -300, scale: 0.4, autoAlpha: 0, duration: 0.8, ease: 'power3.in' }, TX - 0.6);
 
-  // THE FRAME — one element that travels: card → arch → full screen
+  // side arches of the triptych
+  const sideA = [[260, 'reflection'], [1260, 'arcade']].map(([x, shot], i) => {
+    const a = el(`<div class="abs" style="left:${x}px;top:330px;width:400px;height:680px;border-radius:200px 200px 24px 24px;overflow:hidden;box-shadow:0 30px 70px rgba(80,50,30,.22)"></div>`, C2);
+    vclip(a, shot, TA, TH + 0.4, { rate: 0.9 });
+    gsap.set(a, { autoAlpha: 0 });
+    tl.fromTo(a, { autoAlpha: 0, x: i ? -500 : 500, scale: 0.7 }, { autoAlpha: 1, x: 0, scale: 1, duration: 0.85, ease: 'power3.out', immediateRender: false }, TA + 0.1);
+    tl.to(a, { y: i ? -24 : 24, duration: TH - TA - 0.9, ease: 'sine.inOut' }, TA + 0.95);
+    tl.to(a, { x: i ? 700 : -700, autoAlpha: 0, duration: 0.6, ease: 'power3.in' }, TH - 0.3);
+    return a;
+  });
+
+  // THE FRAME — one element that travels through every layout
   const FRL = zlayer(20); show(FRL, TM - 0.4, null, 0.01);
   const fr = el('<div class="abs" style="left:1080px;top:110px;width:680px;height:860px;border-radius:40px;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.45)"></div>', FRL);
-  const img = (src, pos = 'center') => el(`<div class="abs" style="inset:0;background:url('${PH(src)}') ${pos}/cover"></div>`, fr);
-  const seq = [['city-view.jpg', null], ['walk-wide.jpg', at('living'), '62% 50%'], ['wood-wall.jpg', at('personalization')], ['corridor.jpg', at('comfort')],
-    ['copper-wall.jpg', at('time for what')], ['walk-portrait.jpg', TH - 0.1], ['letter.jpg', TW - 0.1, '32% 50%'], ['reception.jpg', TX - 0.5]];
-  seq.forEach(([src, t, pos]) => {
-    const im = img(src, pos || 'center');
-    if (t != null) tl.fromTo(im, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power3.inOut', immediateRender: true }, t - 0.1);
-    kenburns(im, t == null ? TM : t - 0.1, (t == null ? TM : t) + 3.2, 1.18, 1.03);
+  const shots = [['garden', TM - 0.4, tLv + 0.8, 1], ['boulevard', tLv - 0.1, tPz + 0.8, 1], ['interior', tPz - 0.1, tCf + 0.8, 0.9], ['swim', tCf - 0.1, tTm + 0.8, 1],
+    ['dining', tTm - 0.1, T0 + 0.8, 1], ['pergola', T0 - 0.2, TA + 0.9, 0.8], ['pool', TA - 0.1, TH + 0.8, 0.9], ['kids', TH - 0.25, TW + 0.8, 0.55], [null, TW - 0.15, TX + 0.6], ['bench', TX - 0.5, T1 + 0.6, 0.75]];
+  shots.forEach(([shot, t, t1, rate], i) => {
+    const box = el('<div class="abs" style="inset:0;overflow:hidden"></div>', fr);
+    if (shot) vclip(box, shot, t, t1, { rate });
+    else photo(PH('letter.jpg'), { w: 1920, h: 1080, pos: '32% 50%' }, box).style.cssText += ';inset:0;width:100%;height:100%';
+    if (i) tl.fromTo(box, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: true }, t);
+    tl.fromTo(box, { scale: 1.15 }, { scale: 1.0, duration: Math.max(1, t1 - t), ease: 'none', immediateRender: false }, t);
   });
-  const shade = el('<div class="abs" style="inset:0;background:linear-gradient(90deg,rgba(2,12,31,.8),rgba(2,12,31,.2) 60%,rgba(2,12,31,0)),linear-gradient(180deg,rgba(2,12,31,0) 40%,rgba(2,12,31,.7))"></div>', fr);
+  const shade = el('<div class="abs" style="inset:0;background:linear-gradient(90deg,rgba(2,12,31,.75),rgba(2,12,31,.15) 60%,rgba(2,12,31,0)),linear-gradient(180deg,rgba(2,12,31,0) 40%,rgba(2,12,31,.7))"></div>', fr);
   const navy = el('<div class="abs" style="inset:0;background:#041E42"></div>', fr);
   gsap.set([shade, navy], { autoAlpha: 0 });
-  tl.fromTo(fr, { rotationY: -6, transformPerspective: 2000 }, { rotationY: 4, duration: T0 - TM, ease: 'none', immediateRender: false }, TM);
-  // card → arch
-  tl.to(fr, { left: 1120, top: 120, width: 620, height: 840, rotationY: 0, borderTopLeftRadius: 310, borderTopRightRadius: 310, borderBottomLeftRadius: 32, borderBottomRightRadius: 32,
-    boxShadow: '0 40px 90px rgba(80,50,30,.25)', duration: 0.9, ease: 'power3.inOut' }, T0 - 0.35);
-  // arch → full screen
-  tl.to(fr, { left: 0, top: 0, width: 1920, height: 1080, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, duration: 0.9, ease: 'power3.inOut' }, TX - 0.4);
+  const R = (a, b, c, d) => ({ borderTopLeftRadius: a, borderTopRightRadius: b, borderBottomRightRadius: c, borderBottomLeftRadius: d });
+  const mv = (t, props, dur = 0.75) => tl.to(fr, { ...props, duration: dur, ease: 'power3.inOut' }, t);
+  gsap.set(fr, { rotationY: -8, transformPerspective: 2000 });
+  mv(tLv - 0.2, { left: 160, top: 110, width: 680, height: 860, rotationY: 8 });                                   // living: frame glides left
+  mv(tPz - 0.2, { left: 0, top: 0, width: 1920, height: 1080, rotationY: 0, ...R(0, 0, 0, 0) });                   // personalization: full screen
+  tl.to(shade, { autoAlpha: 1, duration: 0.5 }, tPz - 0.1); tl.to(shade, { autoAlpha: 0, duration: 0.4 }, tCf - 0.2);
+  mv(tCf - 0.2, { left: 660, top: 90, width: 600, height: 900, ...R(300, 300, 32, 32) });                             // comfort: centred arch
+  mv(tTm - 0.2, { left: 0, top: 250, width: 1920, height: 600, ...R(0, 0, 0, 0) });                                   // time: cinematic band
+  mv(T0 - 0.35, { left: 1120, top: 120, width: 620, height: 840, ...R(310, 310, 32, 32), boxShadow: '0 40px 90px rgba(80,50,30,.25)' }, 0.9); // arch on cream
+  mv(TA - 0.1, { left: 760, top: 330, width: 400, height: 680, ...R(200, 200, 24, 24) }, 0.8);                       // centre of the triptych
+  mv(TH - 0.3, { left: 1120, top: 120, width: 620, height: 840, ...R(310, 310, 32, 32) }, 0.8);                      // "happiness"
+  tl.to(fr, { rotationY: -10, duration: TW - TH, ease: 'sine.inOut' }, TH + 0.5);
+  tl.to(fr, { rotationY: 6, duration: TX - TW, ease: 'sine.inOut' }, TW);
+  mv(TX - 0.4, { left: 0, top: 0, width: 1920, height: 1080, rotationY: 0, ...R(0, 0, 0, 0) }, 0.9);                 // full screen: experience
   tl.to(shade, { autoAlpha: 1, duration: 0.8 }, TX - 0.2);
-  // push in and dissolve to navy → "Traditionally"
   tl.to(fr, { scale: 1.12, duration: 1.0, ease: 'power2.in' }, T1 - 0.5);
   tl.to(navy, { autoAlpha: 1, duration: 0.8, ease: 'power1.in' }, T1 - 0.45);
   tl.set(FRL, { autoAlpha: 0 }, T1 + 0.4);
-  const RT = zlayer(25); show(RT, TX - 0.2, T1 - 0.4, 0.3, 0.3);
-  rise(ltext('It is an experience|[you live.]', 'h1 cream', 140, 690, RT), TX, { lineGap: [TX, at('you live')] });
+  // text that must sit above the frame
+  const TOP = zlayer(25); show(TOP, TM - 0.4, T1 - 0.4, 0.01, 0.3);
+  [moreTxt[2]].forEach(e => TOP.appendChild(e));
+  rise(ltext('It is an experience|[you live.]', 'h1 cream', 140, 690, TOP), TX, { lineGap: [TX, at('you live')] });
 
-  // copper: opens from the period, then shrinks into the card
+  // iris: the period of "Luxury." opens into facade detail, which then shrinks into the frame
   const Lc = zlayer(22); gsap.set(Lc, { autoAlpha: 0 });
-  const cp = photo(PH('copper.jpg'), {}, Lc);
-  el('<div class="layer shade-all"></div>', Lc);
+  const LcIn = el('<div class="layer"></div>', Lc);
+  vclip(LcIn, 'facade', TB - 0.3, TM + 0.5, { rate: 0.9 });
+  el('<div class="layer" style="background:rgba(2,12,31,.35)"></div>', Lc);
   tl.set(Lc, { autoAlpha: 1 }, TB - 0.3);
   tl.fromTo(Lc, { clipPath: `circle(0px at ${PX}px ${PY}px)` }, { clipPath: `circle(2300px at ${PX}px ${PY}px)`, duration: 1.0, ease: 'power3.in', immediateRender: false }, TB - 0.3);
   tl.set(Lc, { clipPath: FULL }, TB + 0.71);
-  kenburns(cp, TB - 0.3, TM + 0.5, 1.25, 1.05, { from: { rotation: -2 }, to: { rotation: 0 } });
-  const det = ctext('In every [detail.]', 'h1 cream', 480, Lc);
+  tl.fromTo(LcIn, { scale: 1.3, rotation: -3 }, { scale: 1.05, rotation: 0, duration: TM - TB + 0.8, ease: 'power1.out', immediateRender: false }, TB - 0.3);
+  const det = ctext('In every [detail.]', 'h1 cream', 480, Lc, 'text-shadow:0 8px 40px rgba(0,0,0,.4)');
   rise(det, at('in every detail')); hide(det, TM - 0.45, 0.3);
   tl.to(Lc, { clipPath: 'inset(110px 160px 110px 1080px round 40px)', duration: 0.8, ease: 'power3.inOut' }, TM - 0.4);
   tl.to(Lc, { autoAlpha: 0, duration: 0.3 }, TM + 0.35);
@@ -213,6 +272,11 @@ const ICONS = {
     inner += `<rect x="${x}" y="${yb - h}" width="${w}" height="${h}" rx="2"/>`;
     for (let k = 0; k < Math.floor(h / 46); k++) inner += `<path d="M ${x + 14} ${yb - h + 22 + k * 46} h 10 M ${x + w - 24} ${yb - h + 22 + k * 46} h 10" stroke-width="3" data-w="1"/>`;
   });
+  const AER = el('<div class="layer"></div>', L); gsap.set(AER, { autoAlpha: 0 });
+  vclip(AER, 'aerial', T1 + 0.4, at('explore every') + 1, { rate: 0.9 });
+  el('<div class="layer" style="background:linear-gradient(180deg,rgba(2,12,31,.55),rgba(2,12,31,.25) 50%,rgba(2,12,31,.7))"></div>', AER);
+  tl.to(AER, { autoAlpha: 1, duration: 1.2, ease: 'sine.inOut' }, T1 + 0.5);
+  tl.fromTo(AER, { scale: 1.12 }, { scale: 1.0, duration: 4, ease: 'none', immediateRender: false }, T1 + 0.5);
   const SK = svgEl(inner, { sw: 2 }, L);
   gsap.set(SK, { autoAlpha: 0 });
   tl.set(SK, { autoAlpha: 1 }, T1 - 0.05);
@@ -232,9 +296,10 @@ let hero, portalHome, portalEnjoy;
   const T0 = at('and today'), TF = at('four journeys'), TN = at('not four applications'), TO = at('one application'), TZ = at('this is the zood app');
   const L = layer(); show(L, T0 - 0.2, at('explore every') + 0.5, 0.01, 0.5);
   const BG = el('<div class="layer"></div>', L); gsap.set(BG, { autoAlpha: 0 });
-  const bgp = photo(PH('lounge.jpg'), {}, BG);
-  el('<div class="layer" style="background:rgba(2,12,31,.8)"></div>', BG);
-  tl.set(bgp, { filter: 'blur(12px)' }, 0);
+  const bgp = el('<div class="layer"></div>', BG);
+  vclip(bgp, 'aerial', at('we build communities') + 0.4, TZ + 2, { rate: 0.9 });
+  el('<div class="layer" style="background:rgba(2,12,31,.72)"></div>', BG);
+  tl.set(bgp, { filter: 'blur(10px)' }, 0);
   tl.to(BG, { autoAlpha: 1, duration: 1.1, ease: 'sine.inOut' }, at('a smarter way to discover') - 0.45);
   kenburns(bgp, T0 - 0.2, TZ + 2, 1.2, 1.05);
 
@@ -242,13 +307,13 @@ let hero, portalHome, portalEnjoy;
   rise(c2, T0 + 0.1); hide(c2, at('a smarter way to discover') - 0.2, 0.3);
   const sw = ctext('A smarter way to', 'h3 cream', 150, L, 'opacity:.8');
   rise(sw, at('a smarter way to discover')); hide(sw, TF - 0.2, 0.3);
-  const J = [['Discover', at('discover'), 'city-view.jpg', '50% 40%'], ['Own', at('create'), 'reception.jpg', '50% 50%'],
-    ['Live', at('smarter way to live') + 0.5, 'walk-portrait.jpg', '50% 40%'], ['Invest', at('enjoy'), 'copper-wall.jpg', '50% 50%']];
+  const J = [['Discover', at('discover'), 'haze', '50% 50%'], ['Own', at('create'), 'frontal', '60% 50%'],
+    ['Live', at('smarter way to live') + 0.5, 'arcade', '50% 50%'], ['Invest', at('enjoy'), 'pool', '30% 50%']];
   const slot = swapWords(J.map(j => [j[0] + '.', j[1]]), L, (s) => ctext(`[${s}]`, 'h1', 215, L), { useRise: true });
   hide(slot[3], TF - 0.2, 0.3);
   const cards = J.map(([name, t, im, pos], i) => {
     const c = el(`<div class="tile" style="left:${255 + i * 360}px;top:390px;width:330px;height:540px;border-radius:30px;box-shadow:0 40px 90px rgba(0,0,0,.5)"></div>`, L);
-    photo(PH(im), { w: 330, h: 540, pos }, c);
+    vclip(c, im, at('a smarter way to discover') - 0.3, TZ, { pos });
     el('<div class="layer shade-b" style="width:100%;height:100%"></div>', c);
     c.lab = el(`<div class="abs" style="left:28px;bottom:26px"><div class="label" style="opacity:.75;font-size:15px">0${i + 1}</div><div class="h3 cream" style="font-size:40px;margin-top:6px">${name}</div></div>`, c);
     gsap.set(c, { autoAlpha: 0 });
@@ -288,6 +353,8 @@ let hero, portalHome, portalEnjoy;
   const TZ = at('this is the zood app');
   const L = zlayer(50, 'persp'); show(L, TZ + 0.7, at('discover', 2) + 0.9, 0.3, 0.3);
   hero = phone(SCR('splash.jpg'), { parent: L });
+  { const t0 = TZ + 0.7, n = Math.floor((at('discover', 2) - t0) / 2.4);
+    tl.fromTo(L, { y: -9, rotation: -0.4 }, { y: 9, rotation: 0.4, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: n, immediateRender: false }, t0); }
   setPose(hero, { x: 960, y: 540, ry: 0, s: 0.85 });
   tl.fromTo(hero, { filter: 'brightness(2) blur(6px)' }, { filter: 'brightness(1) blur(0px)', duration: 0.7, ease: 'power2.out', immediateRender: false }, TZ + 0.7);
   pose(hero, TZ + 0.9, { x: 1250, ry: -16, s: 1, dur: 1.1, ease: 'power3.inOut' });
@@ -300,6 +367,12 @@ let hero, portalHome, portalEnjoy;
 {
   const T0 = at('explore every'), TE = at('so you can find'), TV = at('verify your identity');
   const L = layer(); show(L, T0 - 0.6, TV + 0.4, 0.3, 0.3);
+  ambient(L, T0 - 0.6, TV + 0.4, { seed: 3 });
+  const DB = el('<div class="layer"></div>', L);
+  vclip(DB, 'haze', T0 - 0.6, at('then tap'), { rate: 0.8 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.55),rgba(2,12,31,.82) 55%,rgba(2,12,31,.9))"></div>', DB);
+  tl.fromTo(DB, { scale: 1.1 }, { scale: 1, duration: 6, ease: 'none', immediateRender: false }, T0 - 0.6);
+  tl.to(DB, { autoAlpha: 0, duration: 0.8 }, at('then tap') - 0.6);
   lineSweep(T0 - 0.6, L);
   chapterTitle('Discover', T0 - 0.25, { left: 1000, top: 440, parent: L, hold: 0.75 });
   chapterLabel('01', 'Discover', T0 + 0.5, TE);
@@ -368,7 +441,7 @@ let hero, portalHome, portalEnjoy;
 
   // dive through the room into the corridor, then the corridor shrinks back into the phone screen
   const C = zlayer(60); gsap.set(C, { autoAlpha: 0 });
-  const cor = photo(PH('corridor.jpg'), {}, C);
+  const cor = el('<div class="layer"></div>', C); vclip(cor, 'interior', tB - 0.75, tS + 0.5, { rate: 0.8 });
   el('<div class="layer shade-b"></div>', C);
   portalOpen(C, tB - 0.75, { l: 1020, t: 490, w: 120, h: 120, r: 10 }, 0.85);
   kenburns(cor, tB - 0.75, tS + 0.6, 1.0, 1.4);
@@ -417,7 +490,7 @@ let hero, portalHome, portalEnjoy;
 
   // dive through the phone screen into "perfect home"
   const P = zlayer(60); gsap.set(P, { autoAlpha: 0 }); portalHome = P;
-  const pw = photo(PH('walk-wide.jpg'), {}, P);
+  const pw = el('<div class="layer"></div>', P); vclip(pw, 'window', TE - 0.5, TV + 0.4, { rate: 0.9 });
   el('<div class="layer shade-l"></div>', P);
   portalOpen(P, TE - 0.5, screenRect(hero, 960), 0.85);
   kenburns(pw, TE - 0.25, TV + 0.5, 1.15, 1.0, { from: { x: -30 }, to: { x: 0 } });
@@ -431,6 +504,7 @@ let hero, portalHome, portalEnjoy;
 {
   const T0 = at('verify your identity'), TH = at('when it is time'), TJ = at('you simply enjoy'), T1 = at('your home');
   const L = layer('bg-navy-soft persp'); show(L, T0 - 0.85, T1 + 0.4, 0.35, 0.6);
+  ambient(L, T0 - 0.85, T1 + 0.4, { seed: 5 });
   lineSweep(T0 - 0.2, L, { dir: -1 });
   chapterTitle('Own', T0 - 0.2, { left: 170, top: 190, parent: L, hold: 0.55 });
   chapterLabel('02', 'Own', T0 + 0.4, TJ - 0.2);
@@ -553,7 +627,8 @@ let hero, portalHome, portalEnjoy;
   const tW = at('and watch your');
   const lw = ltext('Watch your project|take shape, [live.]', 'h2 cream', 1060, 170, L);
   rise(lw, tW, { lineGap: [tW, at('take shape')] }); hide(lw, TH - 0.35, 0.35);
-  const lv = crop(SCR('construction.png'), [0, 0.012, 1, 0.2], 700, { radius: 30, style: 'left:1060px;top:420px;box-shadow:0 50px 100px rgba(0,0,0,.5)' }, L);
+  const lv = el('<div class="tile" style="left:1060px;top:420px;width:700px;height:300px;border-radius:30px;box-shadow:0 50px 100px rgba(0,0,0,.5)"></div>', L);
+  vclip(lv, 'street', tW - 0.2, TH, { rate: 1 });
   gsap.set(lv, { autoAlpha: 0 });
   tl.fromTo(lv, { autoAlpha: 0, y: 80 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: EASE, immediateRender: false }, tW);
   const lvb = el('<div class="chip" style="left:24px;top:24px;padding:10px 20px;font-size:20px"><span class="dot live"></span>LIVE</div>', lv);
@@ -598,7 +673,7 @@ let hero, portalHome, portalEnjoy;
   show(E, TJ - 0.3, null, 0.55);
   tl.fromTo(ecr, { clipPath: 'inset(0px 1920px 0px 0px)' }, { clipPath: 'inset(0px 0px 0px 0px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TJ - 0.3);
   const EP = zlayer(60); gsap.set(EP, { autoAlpha: 0 }); portalEnjoy = EP;
-  const ep = photo(PH('walk-portrait.jpg'), { x: 960, w: 960, h: 1080, pos: '50% 35%' }, EP);
+  const ep = el('<div class="abs" style="left:960px;top:0;width:960px;height:1080px"></div>', EP); vclip(ep, 'pavilion', TJ - 0.3, T1 + 0.4, { rate: 0.9, pos: '45% 50%' });
   tl.set(EP, { autoAlpha: 1 }, TJ - 0.3);
   tl.fromTo(EP, { clipPath: 'inset(0px 0px 0px 1920px round 0px)' }, { clipPath: 'inset(0px 0px 0px 960px round 0px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TJ - 0.3);
   kenburns(ep, TJ - 0.3, T1 + 0.3, 1.12, 1.0);
@@ -614,12 +689,11 @@ let hero, portalHome, portalEnjoy;
   const T0 = at('your home'), TC = at('and everything your community'), TM = at('more presence', 2), TN = at('everything you need'),
     TA = at('as if zood'), TD = at('day and night'), T1 = at('and for those who invest');
   const L = layer('bg-day persp'); show(L, T0 - 0.45, T1 + 0.3, 0.4, 0.35);
+  ambient(L, T0 - 0.45, T1 + 0.3, { color: 'rgba(162,112,99,.12)', glow: 'rgba(255,255,255,.35)', glow2: 'rgba(214,165,140,.18)', seed: 7 });
   const N = el('<div class="layer bg-navy"></div>', L);
   const r = rng(21);
-  for (let i = 0; i < 40; i++) {
-    const s = 6 + r() * 26;
-    el(`<div class="abs" style="left:${r() * 1920}px;top:${r() * 1080}px;width:${s}px;height:${s}px;border-radius:50%;background:rgba(230,191,164,${0.08 + r() * 0.25});filter:blur(${r() * 4}px)"></div>`, N);
-  }
+  vclip(N, 'night', at('with a real sense') - 0.2, T1 + 0.6, { rate: 0.8 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.75),rgba(2,12,31,.35) 60%,rgba(2,12,31,.5))"></div>', N);
   gsap.set(N, { autoAlpha: 0 });
   tl.to(N, { autoAlpha: 1, duration: 2.2, ease: 'sine.inOut' }, at('with a real sense'));
   lineSweep(T0 - 0.5, L, { color: 'rgba(162,112,99,.8)' });
@@ -650,6 +724,11 @@ let hero, portalHome, portalEnjoy;
   tl.to(lock.querySelector('.dash'), { rotation: 90, svgOrigin: '70 70', duration: 2, ease: 'none' }, at('protected securely'));
   [deed, lock].forEach(e => out(e, TC - 0.3));
 
+  const CB = el('<div class="layer"></div>', L); L.insertBefore(CB, N);
+  vclip(CB, 'pergola', TC - 0.4, TN, { rate: 0.8 });
+  el('<div class="layer" style="background:rgba(244,236,228,.78)"></div>', CB);
+  gsap.set(CB, { autoAlpha: 0 });
+  tl.to(CB, { autoAlpha: 1, duration: 0.8 }, TC - 0.4); tl.to(CB, { autoAlpha: 0, duration: 0.8 }, TN - 0.5);
   // community — NEW services pie + noticeboard (from the animatic)
   pose(p, TC - 0.3, { x: 960, y: 590, ry: 0, s: 0.86, dur: 0.8 });
   swap(p, SCR('community.png'), TC - 0.1);
@@ -711,6 +790,12 @@ let hero, portalHome, portalEnjoy;
 {
   const T0 = at('and for those who invest'), TS = at('a smarter way to make'), TX = at('discover', 2);
   const L = layer('bg-navy persp'); show(L, T0 - 0.4, TX - 0.1, 0.35, 0.4);
+  ambient(L, T0 - 0.4, TX - 0.1, { seed: 8 });
+  const IB = el('<div class="layer"></div>', L);
+  vclip(IB, 'dusk', T0 - 0.4, TS + 0.6, { rate: 1 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.85),rgba(2,12,31,.45) 60%,rgba(2,12,31,.6))"></div>', IB);
+  tl.fromTo(IB, { scale: 1.15 }, { scale: 1.0, duration: TS - T0 + 1, ease: 'none', immediateRender: false }, T0 - 0.4);
+  tl.to(IB, { autoAlpha: 0, duration: 0.8 }, TS - 0.2);
   lineSweep(T0 - 0.45, L, { dir: -1 });
   chapterTitle('Invest', T0 - 0.15, { left: 160, top: 120, parent: L, hold: 0.45 });
   chapterLabel('04', 'Invest', T0 + 0.4, TX - 0.5);
@@ -832,6 +917,11 @@ const END = Math.ceil(after('live zood') + 6.5);
   gsap.set(sym, { autoAlpha: 0 }); tl.to(sym, { autoAlpha: 1, duration: 0.25 }, TCOL + 0.7);
   tl.to(txt, { scale: 1.6, autoAlpha: 0, duration: 0.35, ease: 'power2.in' }, TL_LUX - 0.1);
 
+  const NB = el('<div class="layer"></div>', L); gsap.set(NB, { autoAlpha: 0 });
+  vclip(NB, 'night', TL_LUX - 0.5, END, { rate: 0.85 });
+  el('<div class="layer" style="background:radial-gradient(70% 70% at 50% 45%, rgba(2,12,31,.55), rgba(2,12,31,.85))"></div>', NB);
+  tl.to(NB, { autoAlpha: 1, duration: 1.4, ease: 'sine.inOut' }, TL_LUX - 0.3);
+  tl.fromTo(NB, { scale: 1.12 }, { scale: 1.0, duration: END - TL_LUX, ease: 'none', immediateRender: false }, TL_LUX - 0.3);
   const burst = el('<div class="abs" style="left:560px;top:140px;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle, rgba(230,191,164,.55) 0%, rgba(230,191,164,0) 60%)"></div>', L);
   gsap.set(burst, { autoAlpha: 0 });
   tl.fromTo(burst, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1.3, duration: 0.6, ease: 'power2.out', immediateRender: false }, TL_LUX - 0.2);

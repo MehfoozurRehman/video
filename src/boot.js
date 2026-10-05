@@ -14,10 +14,11 @@ window.__seek = (t) => {
   tl.seek(t, false);
   const f = Math.floor(t * 60);
   grain.style.transform = `translate(${(f * 37) % 64 - 32}px, ${(f * 53) % 64 - 32}px)`;
+  return updateClips(t);
 };
 window.__ready = (async () => {
   await document.fonts.ready;
-  const urls = new Set([...document.querySelectorAll('img')].map(i => i.src));
+  const urls = new Set([...document.querySelectorAll('img')].map(i => i.src).filter(u => !u.startsWith('data:')));
   document.querySelectorAll('*').forEach(e => { const m = e.style && e.style.backgroundImage.match(/url\("?([^")]+)"?\)/); if (m) urls.add(m[1]); });
   await Promise.all([...urls].map(u => { const i = new Image(); i.src = u; return i.decode().catch(() => console.warn('img fail', u)); }));
   await Promise.all([...document.querySelectorAll('img')].map(i => i.decode().catch(() => {})));

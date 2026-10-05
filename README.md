@@ -19,7 +19,7 @@ headless Chromium (Playwright) and encoded with ffmpeg.
 ## Assets (not in git)
 The repository is public, so client material is not committed. Place it in `src/assets/`:
 `fonts/` (ITF Huwiya Arabic TTFs), `screens/` (app screens), `photos/` (brand-book imagery),
-`brand/` (logo PNGs, App Store / Google Play SVGs), `audio/vo-edit.wav` (voiceover with pauses tightened and 1.1× tempo).
+`brand/` (logo PNGs, App Store / Google Play SVGs), `clips/proj/` (project film as a 30 fps JPEG sequence: `ffmpeg -i film.mp4 -q:v 3 src/assets/clips/proj/f%05d.jpg`), `audio/vo-edit.wav` (voiceover with pauses tightened and 1.1× tempo).
 
 ## Usage
 ```bash

@@ -254,3 +254,51 @@ function portalClose(e, t, rect, dur = 0.9, from = FULL) {
   tl.fromTo(e, { clipPath: from }, { clipPath: insetFor(rect), duration: dur, ease: 'power3.inOut', immediateRender: false }, t);
   tl.to(e, { autoAlpha: 0, duration: 0.2, ease: 'none' }, t + dur - 0.2);
 }
+
+// ---------- live footage (frame sequence of the ZOOD project film, 30 fps) ----------
+// Shot list: [in, out] seconds in the project film.
+const SHOT = {
+  sunrise: [0.2, 6.0], haze: [6.6, 11.3], aerial: [11.6, 17.0], frontal: [17.3, 22.8], street: [23.1, 28.4], bench: [28.7, 31.0],
+  boulevard: [31.2, 34.6], garden: [34.9, 40.3], arcade: [40.6, 46.1], window: [46.4, 51.6], pergola: [51.9, 57.4], kids: [57.7, 60.1],
+  reflection: [60.3, 66.0], pool: [66.3, 71.9], interior: [72.1, 74.6], dusk: [74.9, 80.3], facade: [80.5, 83.1], dining: [83.4, 85.9],
+  pavilion: [86.2, 90.7], swim: [90.9, 94.6], night: [94.9, 103.4],
+};
+const CLIPS = [];
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+// Footage element filling its parent. Plays shot `name` from timeline t0 (until t1) at `rate`; holds the last frame.
+function vclip(parent, name, t0, t1, { rate = 1, from = 0, pos = 'center', style = '' } = {}) {
+  const [a, b] = SHOT[name];
+  const img = el(`<img src="${BLANK}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${pos};${style}">`, parent);
+  CLIPS.push({ img, a: a + from, b, t0, t1, rate, last: -1 });
+  return img;
+}
+// Called from __seek: point every active clip at the right frame and wait for decode.
+function updateClips(t) {
+  const jobs = [];
+  for (const c of CLIPS) {
+    if (t < c.t0 - 0.2 || t > c.t1 + 0.2) continue;
+    const src = Math.min(c.b, Math.max(c.a, c.a + (t - c.t0) * c.rate));
+    const n = Math.min(3131, Math.max(1, Math.round(src * 30) + 1));
+    if (n !== c.last) {
+      c.last = n;
+      c.img.src = `assets/clips/proj/f${String(n).padStart(5, '0')}.jpg`;
+      jobs.push(c.img.decode().catch(() => {}));
+    }
+  }
+  return Promise.all(jobs);
+}
+
+// Ambient motion for plain backgrounds: drifting brand lines + two slow light glows.
+function ambient(L, t0, t1, { color = 'rgba(214,165,140,.10)', glow = 'rgba(155,203,235,.10)', glow2 = 'rgba(214,165,140,.10)', seed = 2 } = {}) {
+  const A = el('<div class="layer" style="overflow:hidden"></div>');
+  L.insertBefore(A, L.firstChild);
+  const g1 = el(`<div class="abs" style="left:-300px;top:-200px;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle, ${glow} 0%, rgba(0,0,0,0) 65%)"></div>`, A);
+  const g2 = el(`<div class="abs" style="left:1100px;top:300px;width:1000px;height:1000px;border-radius:50%;background:radial-gradient(circle, ${glow2} 0%, rgba(0,0,0,0) 65%)"></div>`, A);
+  const kl = kinkLines(A, { n: 18, color, width: 1.6, seed, dx: 46 });
+  kl.svg.style.width = '2400px'; kl.svg.setAttribute('width', 2400);
+  const d = t1 - t0;
+  tl.fromTo(kl.svg, { x: 0 }, { x: -420, duration: d, ease: 'none', immediateRender: false }, t0);
+  tl.fromTo(g1, { x: 0, y: 0 }, { x: 700, y: 260, duration: d, ease: 'sine.inOut', immediateRender: false }, t0);
+  tl.fromTo(g2, { x: 0, y: 0 }, { x: -800, y: -380, duration: d, ease: 'sine.inOut', immediateRender: false }, t0);
+  return A;
+}
