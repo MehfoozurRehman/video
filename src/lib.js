@@ -302,3 +302,73 @@ function ambient(L, t0, t1, { color = 'rgba(214,165,140,.10)', glow = 'rgba(155,
   tl.fromTo(g2, { x: 0, y: 0 }, { x: -800, y: -380, duration: d, ease: 'sine.inOut', immediateRender: false }, t0);
   return A;
 }
+
+// ---------- B-film helpers ----------
+const AFTER_FONTS = [];
+// Big word used as a mask: whatever is inside `box` shows only through the letters.
+function textMask(box, word, { size = 360, weight = 600, spacing = 0, y = 0.5 } = {}) {
+  AFTER_FONTS.push(() => {
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.font = `${weight} ${size}px Huwiya`; g.letterSpacing = `${spacing}px`;
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#000';
+    g.fillText(word, W / 2, H * y);
+    const u = c.toDataURL();
+    box.style.webkitMaskImage = `url(${u})`; box.style.webkitMaskSize = '1920px 1080px'; box.style.webkitMaskRepeat = 'no-repeat';
+  });
+  return box;
+}
+// Brand-stripe wipe: vertical bars cover the frame, then uncover it (scene swaps underneath at t + 0.4).
+function stripeWipe(t, { n = 12, color = '#041E42', color2 = '#A27063', z = 80, dur = 0.42, dir = 1 } = {}) {
+  const box = zlayer(z);
+  const bw = W / n;
+  const bars = [];
+  for (let i = 0; i < n; i++) {
+    const b = el(`<div class="abs" style="left:${i * bw - 1}px;top:0;width:${bw + 2}px;height:${H}px;background:${i % 4 === 1 ? color2 : color}"></div>`, box);
+    bars.push(b);
+  }
+  tl.set(box, { autoAlpha: 1 }, t);
+  const order = dir > 0 ? bars : [...bars].reverse();
+  tl.fromTo(order, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: dur, stagger: 0.022, ease: 'power3.in', immediateRender: false }, t);
+  tl.to(order, { scaleY: 0, transformOrigin: '50% 0%', duration: dur, stagger: 0.022, ease: 'power3.out' }, t + dur + n * 0.022);
+  tl.set(box, { autoAlpha: 0 }, t + 2 * dur + 2 * n * 0.022 + 0.05);
+  return t + dur + n * 0.022;   // moment the frame is fully covered
+}
+// Horizontal marquee of a repeated word (outline or solid).
+function marquee(parent, word, top, t0, t1, { size = 260, speed = 220, outline = true, color = 'rgba(244,238,232,.18)', dir = -1 } = {}) {
+  const row = el(`<div class="abs" style="left:0;top:${top}px;white-space:nowrap;font-weight:600;font-size:${size}px;line-height:1;letter-spacing:.02em;
+    ${outline ? `color:transparent;-webkit-text-stroke:2px ${color}` : `color:${color}`}">${(word + '&nbsp;&nbsp;·&nbsp;&nbsp;').repeat(8)}</div>`, parent);
+  const d = (t1 - t0) * speed * dir;
+  tl.fromTo(row, { x: dir < 0 ? 0 : -1600 }, { x: (dir < 0 ? 0 : -1600) + d, duration: t1 - t0, ease: 'none', immediateRender: true }, t0);
+  return row;
+}
+// UI annotation: a leader line drawn from a point to a label.
+function annotate(parent, [x1, y1], [x2, y2], label, t, { color = '#D6A58C', align = 'left' } = {}) {
+  const s = svgEl(`<circle cx="${x1}" cy="${y1}" r="6" fill="${color}" data-nodraw="1"/><path d="M ${x1} ${y1} L ${x2} ${y2} H ${x2 + (align === 'left' ? 40 : -40)}"/>`, { stroke: color, sw: 1.6 }, parent);
+  gsap.set(s, { autoAlpha: 0 });
+  tl.set(s, { autoAlpha: 1 }, t);
+  drawAll(s, t, 0.5, 0);
+  tl.fromTo(s.querySelector('circle'), { scale: 0, transformOrigin: `${x1}px ${y1}px` }, { scale: 1, duration: 0.3, ease: 'back.out(3)', immediateRender: true }, t);
+  const lab = el(`<div class="abs" style="${align === 'left' ? `left:${x2 + 52}px` : `right:${W - x2 + 52}px`};top:${y2 - 20}px;font-size:28px;font-weight:500;color:#F4EEE8;white-space:nowrap">${label}</div>`, parent);
+  gsap.set(lab, { autoAlpha: 0 });
+  tl.fromTo(lab, { autoAlpha: 0, x: align === 'left' ? -14 : 14 }, { autoAlpha: 1, x: 0, duration: 0.4, ease: EASE, immediateRender: false }, t + 0.35);
+  return [s, lab];
+}
+// Magnifier loupe that travels over a phone screen image (screen fractions).
+function loupe(parent, src, phoneCx, phoneCy, p, path, t0, t1, { r = 130, zoom = 2.4 } = {}) {
+  const sw = p.sw, sh = p.sh;
+  const L = el(`<div class="abs" style="width:${2 * r}px;height:${2 * r}px;border-radius:50%;overflow:hidden;border:3px solid #E6BFA4;box-shadow:0 30px 70px rgba(0,0,0,.5);background:#fff">
+      <img src="${src}" style="position:absolute;width:${sw * zoom}px;height:${sh * zoom}px"></div>`, parent);
+  const img = L.querySelector('img');
+  const pos = (fx, fy) => ({ left: phoneCx - sw / 2 + fx * sw - r, top: phoneCy - sh / 2 + fy * sh - r });
+  const ip = (fx, fy) => ({ left: -fx * sw * zoom + r, top: -fy * sh * zoom + r });
+  gsap.set(L, { autoAlpha: 0, ...pos(...path[0]) }); gsap.set(img, ip(...path[0]));
+  tl.fromTo(L, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(1.8)', immediateRender: false }, t0);
+  const seg = (t1 - t0 - 0.6) / Math.max(1, path.length - 1);
+  path.slice(1).forEach((pt, i) => {
+    tl.to(L, { ...pos(...pt), duration: seg * 0.8, ease: 'power2.inOut' }, t0 + 0.4 + i * seg);
+    tl.to(img, { ...ip(...pt), duration: seg * 0.8, ease: 'power2.inOut' }, t0 + 0.4 + i * seg);
+  });
+  tl.to(L, { autoAlpha: 0, scale: 0.4, duration: 0.3 }, t1 - 0.3);
+  return L;
+}

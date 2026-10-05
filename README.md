@@ -4,6 +4,12 @@ A 2:54 landscape (1920×1080, 60fps) launch film for the ZOOD mobile app, built 
 an HTML/CSS stage animated by a single paused GSAP timeline, rendered frame-by-frame with
 headless Chromium (Playwright) and encoded with ffmpeg.
 
+## Two films
+- **Video A** — `src/index.html` + `src/scenes.js` (floating 3D phone, travelling frame, portals).
+- **Video B** — `src/b.html` + `src/scenes-b.js` (editorial rhythm: footage inside type and the ZOOD symbol, stripe wipes, split screens, sliding footage columns, marquee type, flat phones with UI annotations). Render with `FILM=b.html node render/render.mjs --out out/ZOOD_B.mp4`.
+
+Both share `src/lib.js`, `src/boot.js`, `src/style.css`, `src/vo.js` and the renderer.
+
 ## Structure
 | Path | What it is |
 |---|---|

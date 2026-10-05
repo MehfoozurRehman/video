@@ -14,7 +14,7 @@ export async function openFilm() {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.text()); });
-  await page.goto(pathToFileURL(path.join(ROOT, 'src/index.html')).href, { waitUntil: 'load' });
+  await page.goto(pathToFileURL(path.join(ROOT, 'src', process.env.FILM || 'index.html')).href, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__ready !== undefined, null, { timeout: 30000 }).catch(() => {});
   await page.evaluate(() => window.__ready);
   if (errors.length) console.error('[page]', errors.join('\n'));
