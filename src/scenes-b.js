@@ -269,12 +269,12 @@ let bHero;
   tl.to(cols[4], { autoAlpha: 0, scale: 0.8, duration: 0.4 }, TF - 0.3);
   tl.to(strip, { x: (cw + gap) / 2, duration: 0.6, ease: 'power3.inOut' }, TF - 0.3);
   tl.to(dim, { background: 'rgba(2,12,31,.2)', duration: 0.4 }, TF - 0.3);
-  const fj = ctext('FOUR JOURNEYS.', 'label', 40, L, 'font-size:30px;letter-spacing:.5em;color:#F4EEE8'); reveal(fj, TF, { dur: 0.4 }); out(fj, TN - 0.15);
+  const fj = ctext('FOUR JOURNEYS.', 'label', 40, L, 'font-size:30px;letter-spacing:.5em;color:#F4EEE8'); reveal(fj, TF, { dur: 0.4 }); out(fj, TN - 0.4, 0.2);
   ['01  DISCOVER', '02  OWN', '03  LIVE', '04  INVEST'].forEach((s, i) => {
     const lab = el(`<div class="abs label" style="left:28px;bottom:30px;font-size:20px;color:#F4EEE8">${s}</div>`, cols[i]);
     gsap.set(lab, { autoAlpha: 0 }); pop(lab, TF + 0.1 + i * 0.1); out(lab, TN);
   });
-  const na = ctext('NOT FOUR APPLICATIONS.', 'label', 40, L, 'font-size:30px;letter-spacing:.5em;color:#F4EEE8'); reveal(na, TN, { dur: 0.4 }); out(na, TO - 0.15);
+  const na = ctext('NOT FOUR APPLICATIONS.', 'label', 40, L, 'font-size:30px;letter-spacing:.5em;color:#F4EEE8'); reveal(na, TN, { dur: 0.4 }); out(na, TO - 0.4, 0.2);
   cols.slice(0, 4).forEach((c, i) => {
     tl.to(c, { top: 330, height: 420, width: 200, left: i * (cw + gap) + 80, borderRadius: 40, duration: 0.6, ease: 'power3.inOut' }, TN + 0.05);
     tl.to(c, { left: 1.5 * (cw + gap) + 80, rotation: (i - 1.5) * 6, duration: 0.5, ease: 'power3.in' }, TO - 0.1);
