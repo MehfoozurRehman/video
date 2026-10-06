@@ -36,6 +36,13 @@ npm install
 node render/still.mjs out/stills 10 65 120 198      # review frames
 node render/render.mjs --fps 60 --workers 4 --out out/ZOOD_App_Film_1080p60.mp4
 ```
+Music (original, generated in code and timed to the VO cues), then mix it under the voice with ducking:
+```bash
+python3 -I tools/music.py src/vo.js src/assets/audio/music.wav 174
+ffmpeg -i out/ZOOD_App_Film_v5_1080p60.mp4 -i src/assets/audio/vo-edit.wav -i src/assets/audio/music.wav -filter_complex \
+  "[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=6dB,asplit[v1][v2];[2:a]volume=-7dB[m];[m][v1]sidechaincompress=threshold=0.04:ratio=2.5:attack=20:release=500[md];[v2][md]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.93:level=false[a]" \
+  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 320k -t 174 -movflags +faststart out/ZOOD_App_Film_v5_music_1080p60.mp4
+```
 Open `src/index.html?play` in a browser and click to preview in real time with the VO.
 
 ## Editing
