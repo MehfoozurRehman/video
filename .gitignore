@@ -2,3 +2,4 @@ node_modules/
 out/
 # Client assets (licensed font, unreleased app screens, brand imagery, voiceover, project footage) are kept out of this public repo.
 src/assets/
+ffmpeg2pass-*
