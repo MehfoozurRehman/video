@@ -1,4 +1,4 @@
-// ZOOD app film v2 — full timeline. Every cue is tied to a spoken phrase via at()/after()
+// ZOOD app film v5 — full timeline. Every cue is tied to a spoken phrase via at()/after()
 // (word timings in vo.js, force-aligned to assets/audio/vo-edit.wav: pauses tightened, 1.1× tempo).
 
 // ---------------------------------------------------------------- helpers
@@ -50,18 +50,7 @@ function photoCard(src, { x, y, w, h, radius = 32, pos = 'center' }, parent) {
   return c;
 }
 // Brand-line sweep: kinked rose lines race across the frame (chapter transition).
-function lineSweep(t, parent, { n = 9, color = 'rgba(214,165,140,.85)', dir = 1 } = {}) {
-  const box = el('<div class="layer" style="pointer-events:none"></div>', parent || stage);
-  gsap.set(box, { autoAlpha: 0 });
-  const { paths } = kinkLines(box, { n, color, width: 2.2, seed: Math.round(t * 10), dx: 60 });
-  tl.set(box, { autoAlpha: 1 }, t);
-  paths.forEach((p, i) => {
-    const L = p.getTotalLength();
-    gsap.set(p, { strokeDasharray: `${L * 0.35} ${L}`, strokeDashoffset: L * 0.35 });
-    tl.fromTo(p, { strokeDashoffset: L * 0.35 }, { strokeDashoffset: -L, duration: 0.9, ease: 'power2.inOut', immediateRender: false }, t + (dir > 0 ? i : n - i) * 0.035);
-  });
-  tl.set(box, { autoAlpha: 0 }, t + 1.3);
-}
+function lineSweep(t, parent, { n = 9, color = 'rgba(214,165,140,.85)', dir = 1 } = {}) { brandSweep(t, parent, { n, color, dir }); }
 const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#7a4e40"/><stop offset=".5" stop-color="#E6BFA4"/><stop offset="1" stop-color="#A27063"/></linearGradient></defs>`;
 
 // =====================================================================
@@ -87,7 +76,7 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   const lux = ctext('Luxury.', 'h0 cream', 440, D, 'font-size:190px;text-shadow:0 10px 60px rgba(0,0,0,.35)');
   reveal(lux, 0.05, { stagger: 0, dur: 1.3, blur: 30, y: 16 });
   tl.fromTo(lux, { letterSpacing: '0.16em' }, { letterSpacing: '0.02em', duration: 3.6, ease: 'power2.out', immediateRender: false }, 0.05);
-  const sub = ctext('Always at the heart of [ZOOD.]', 'h3 cream', 680, D, 'opacity:.9');
+  const sub = ctext('It has always been at the heart of [ZOOD.]', 'h3 cream', 680, D, 'opacity:.9');
   rise(sub, at('it has always'));
   const PX = 1250, PY = 572;
   tl.to(lux, { scale: 1.25, transformOrigin: `${PX}px ${PY - 440}px`, autoAlpha: 0, duration: 0.8, ease: 'power2.in' }, TB - 0.3);
@@ -120,8 +109,8 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   // slow kinked line pattern drifting behind everything on cream
   const kl = kinkLines(C2, { n: 16, color: 'rgba(162,112,99,.14)', width: 2, seed: 9, dx: 50 });
   tl.fromTo(kl.svg, { x: 0 }, { x: -260, duration: TX - T0 + 1, ease: 'none', immediateRender: false }, T0 - 0.35);
-  const t1 = ltext('True luxury is not about|having more things.', 'h2 navy', 170, 300, C2);
-  rise(t1, T0 + 0.1, { lineGap: [T0 + 0.1, at('having more things')] }); hide(t1, TA - 0.25, 0.3);
+  const t1 = ltext('Because true luxury is not|about having more things.', 'h2 navy', 170, 300, C2);
+  rise(t1, T0 + 0.1, { lineGap: [T0 + 0.1, at('about having more things')] }); hide(t1, TA - 0.25, 0.3);
   // floating "things" that scatter away
   const things = [['cabinet.jpg', 190, 600, 230, 170], ['report-folder.jpg', 470, 680, 260, 160], ['copper.jpg', 760, 560, 170, 170], ['wood-wall.jpg', 300, 820, 190, 150], ['letter.jpg', 620, 860, 240, 140], ['arch.jpg', 880, 760, 150, 150]];
   const rr = rng(31);
@@ -142,8 +131,8 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   rise(h1, TH); rise(h2, at('happiness'), { stagger: 0 }); rise(h3, at('means'));
   tl.fromTo(h2, { letterSpacing: '0.1em' }, { letterSpacing: '0em', duration: 1.6, ease: 'power2.out', immediateRender: false }, at('happiness'));
   [h1, h2, h3].forEach(e => hide(e, TW - 0.25, 0.3));
-  const pr = ltext('At [ZOOD,] luxury is|not a promise on paper.', 'h2 navy', 170, 330, C2);
-  rise(pr, TW + 0.1, { lineGap: [TW + 0.1, at('not a promise')] }); hide(pr, TX - 0.45, 0.3);
+  const pr = ltext('That is why, at [ZOOD,]|luxury is not a promise on paper.', 'h2 navy', 170, 330, C2);
+  rise(pr, TW + 0.1, { lineGap: [TW + 0.1, at('luxury is not a promise')] }); hide(pr, TX - 0.45, 0.3);
   // floating sheet of "paper" that flips away
   const paper = el(`<div class="card" style="left:190px;top:600px;width:380px;height:250px;padding:30px 34px">
       <div class="label" style="font-size:13px;color:#A27063">Promise</div>
@@ -167,11 +156,12 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   // THE FRAME — one element that travels through every layout
   const FRL = zlayer(20); show(FRL, TM - 0.4, null, 0.01);
   const fr = el('<div class="abs" style="left:1080px;top:110px;width:680px;height:860px;border-radius:40px;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.45)"></div>', FRL);
-  const shots = [['garden', TM - 0.4, tLv + 0.8, 1], ['boulevard', tLv - 0.1, tPz + 0.8, 1], ['interior', tPz - 0.1, tCf + 0.8, 0.9], ['swim', tCf - 0.1, tTm + 0.8, 1],
+  const shots = [['garden', TM - 0.4, tLv + 0.8, 1], ['boulevard', tLv - 0.1, tPz + 0.8, 1], ['g:p17', tPz - 0.1, tCf + 0.8, 1, 1.9], ['swim', tCf - 0.1, tTm + 0.8, 1],
     ['dining', tTm - 0.1, T0 + 0.8, 1], ['pergola', T0 - 0.2, TA + 0.9, 0.8], ['pool', TA - 0.1, TH + 0.8, 0.9], ['kids', TH - 0.25, TW + 0.8, 0.55], [null, TW - 0.15, TX + 0.6], ['bench', TX - 0.5, T1 + 0.6, 0.75]];
-  shots.forEach(([shot, t, t1, rate], i) => {
+  shots.forEach(([shot, t, t1, rate, from = 0], i) => {
     const box = el('<div class="abs" style="inset:0;overflow:hidden"></div>', fr);
-    if (shot) vclip(box, shot, t, t1, { rate });
+    if (shot && shot.startsWith('g:')) gclip(box, shot.slice(2), t, t1, { rate, from });
+    else if (shot) vclip(box, shot, t, t1, { rate });
     else photo(PH('letter.jpg'), { w: 1920, h: 1080, pos: '32% 50%' }, box).style.cssText += ';inset:0;width:100%;height:100%';
     if (i) tl.fromTo(box, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: true }, t);
     tl.fromTo(box, { scale: 1.15 }, { scale: 1.0, duration: Math.max(1, t1 - t), ease: 'none', immediateRender: false }, t);
@@ -211,7 +201,7 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   tl.fromTo(Lc, { clipPath: `circle(0px at ${PX}px ${PY}px)` }, { clipPath: `circle(2300px at ${PX}px ${PY}px)`, duration: 1.0, ease: 'power3.in', immediateRender: false }, TB - 0.3);
   tl.set(Lc, { clipPath: FULL }, TB + 0.71);
   tl.fromTo(LcIn, { scale: 1.3, rotation: -3 }, { scale: 1.05, rotation: 0, duration: TM - TB + 0.8, ease: 'power1.out', immediateRender: false }, TB - 0.3);
-  const det = ctext('In every [detail.]', 'h1 cream', 480, Lc, 'text-shadow:0 8px 40px rgba(0,0,0,.4)');
+  const det = ctext('But luxury in every [detail.]', 'h1 cream', 480, Lc, 'text-shadow:0 8px 40px rgba(0,0,0,.4)');
   rise(det, at('in every detail')); hide(det, TM - 0.45, 0.3);
   tl.to(Lc, { clipPath: 'inset(110px 160px 110px 1080px round 40px)', duration: 0.8, ease: 'power3.inOut' }, TM - 0.4);
   tl.to(Lc, { autoAlpha: 0, duration: 0.3 }, TM + 0.35);
@@ -244,10 +234,21 @@ const ICONS = {
   const ws = swapWords(groups.map(g => [g[0], g[1]]), L, (s) => ctext(s, 'h1 cream', 480, L), { useRise: true });
   hide(ws[3], TQ - 0.15, 0.4);
   const r = rng(11);
+  // the client's 3D icons (green removed) land as each word is spoken, then everything is pulled into one point
+  [['paper', 380, 330, -8], ['sprea', 1540, 330, 6], ['conve', 960, 790, 4]].forEach(([nm, cx, cy, rot], i) => {
+    const t = groups[i][1];
+    const w3 = el('<div class="abs" style="left:0;top:0;width:464px;height:720px;clip-path:inset(60px 14px 120px 14px)"></div>', L);
+    gclip(w3, nm, t - 0.1, TQ + 1.2, { fit: 'fill' });
+    const s3 = 0.95;
+    gsap.set(w3, { x: cx - 232, y: cy - 333, scale: s3, transformOrigin: '232px 333px', autoAlpha: 0 });
+    tl.fromTo(w3, { autoAlpha: 0, scale: 0.3, rotation: rot - 25, y: cy - 333 + 120 }, { autoAlpha: 1, scale: s3, rotation: rot, y: cy - 333, duration: 0.75, ease: 'back.out(1.5)', immediateRender: false }, t - 0.05);
+    tl.to(w3, { y: `-=${18 + i * 6}`, rotation: `+=${i % 2 ? -4 : 4}`, duration: Math.max(0.5, TQ - t - 0.7), ease: 'sine.inOut' }, t + 0.7);
+    tl.to(w3, { x: 960 - 232, y: 540 - 333, scale: 0, rotation: `+=${140}`, autoAlpha: 0, duration: 0.9, ease: 'power3.in' }, TQ + 0.1 + i * 0.08);
+  });
   groups.forEach(([, t, kinds]) => {
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 7; i++) {
       let x, y;
-      do { x = 80 + r() * 1700; y = 80 + r() * 880; } while (x > 420 && x < 1420 && y > 380 && y < 700);
+      do { x = 80 + r() * 1700; y = 80 + r() * 880; } while ((x > 420 && x < 1420 && y > 380 && y < 700) || (x > 480 && x < 1440 && y < 250));
       const s = 70 + r() * 70, rot = (r() - 0.5) * 50;
       const ic = el(`<svg class="abs" viewBox="0 0 72 72" width="${s}" height="${s}" style="left:${x}px;top:${y}px;opacity:0"><g fill="none" stroke="#D6A58C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[kinds[i % 3]]}</g></svg>`, L);
       const ti = t + i * 0.045;
@@ -307,19 +308,29 @@ let hero, portalHome, portalEnjoy;
   rise(c2, T0 + 0.1); hide(c2, at('a smarter way to discover') - 0.2, 0.3);
   const sw = ctext('A smarter way to', 'h3 cream', 150, L, 'opacity:.8');
   rise(sw, at('a smarter way to discover')); hide(sw, TF - 0.2, 0.3);
-  const J = [['Discover', at('discover'), 'haze', '50% 50%'], ['Own', at('create'), 'frontal', '60% 50%'],
-    ['Live', at('smarter way to live') + 0.5, 'arcade', '50% 50%'], ['Invest', at('enjoy'), 'pool', '30% 50%']];
+  const J = [['Discover', at('discover'), 'haze', '50% 50%'], ['Create', at('create'), 'frontal', '60% 50%'],
+    ['Live', at('live', 2), 'arcade', '50% 50%'], ['Enjoy', at('enjoy'), 'pool', '30% 50%']];
+  // outline icons, as in the client's Discover reference
+  const JI = [
+    '<circle cx="62" cy="58" r="36"/><path d="M 40 50 A 26 26 0 0 1 62 32"/><path d="M 88 84 L 116 112" stroke-width="7"/>',
+    '<path d="M 26 116 L 96 30 a 8 8 0 0 1 12 10 L 38 124 L 22 128 Z"/><path d="M 88 40 l 12 10"/><path d="M 112 118 L 52 50"/><path d="M 52 50 c -10 -12 -26 -14 -32 -8 c 6 2 6 10 4 14 c 8 6 20 6 28 -6 z"/>',
+    '<path d="M 18 66 L 70 22 L 122 66"/><path d="M 30 56 V 122 H 110 V 56"/><path d="M 96 28 V 44"/><path d="M 70 102 C 50 88 44 78 50 70 C 56 62 66 64 70 72 C 74 64 84 62 90 70 C 96 78 90 88 70 102 Z"/>',
+    '<circle cx="62" cy="66" r="46"/><path d="M 40 58 q 6 -8 12 0 M 72 58 q 6 -8 12 0"/><path d="M 42 80 q 20 22 40 0"/><path d="M 108 92 l 5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1 z" fill="rgba(4,30,66,.35)"/>',
+  ];
   const slot = swapWords(J.map(j => [j[0] + '.', j[1]]), L, (s) => ctext(`[${s}]`, 'h1', 215, L), { useRise: true });
   hide(slot[3], TF - 0.2, 0.3);
   const cards = J.map(([name, t, im, pos], i) => {
     const c = el(`<div class="tile" style="left:${255 + i * 360}px;top:390px;width:330px;height:540px;border-radius:30px;box-shadow:0 40px 90px rgba(0,0,0,.5)"></div>`, L);
     vclip(c, im, at('a smarter way to discover') - 0.3, TZ, { pos });
-    el('<div class="layer shade-b" style="width:100%;height:100%"></div>', c);
+    el('<div class="layer" style="width:100%;height:100%;background:linear-gradient(180deg,rgba(2,12,31,.05) 30%,rgba(2,12,31,.55) 75%,rgba(2,12,31,.8))"></div>', c);
+    c.ic = el(`<svg class="abs" viewBox="0 0 140 140" width="150" height="150" style="left:90px;top:170px;overflow:visible"><g fill="none" stroke="#F4EEE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${JI[i]}</g></svg>`, c);
     c.lab = el(`<div class="abs" style="left:28px;bottom:26px"><div class="label" style="opacity:.75;font-size:15px">0${i + 1}</div><div class="h3 cream" style="font-size:40px;margin-top:6px">${name}</div></div>`, c);
     gsap.set(c, { autoAlpha: 0 });
     tl.fromTo(c, { autoAlpha: 0, scaleY: 0.05, transformOrigin: '50% 100%' }, { autoAlpha: 1, scaleY: 1, duration: 0.85, ease: 'power3.out', immediateRender: false }, at('a smarter way to discover') - 0.25 + i * 0.09);
+    drawAll(c.ic, t - 0.1, 0.7, 0.06);
     return c;
   });
+  cards.forEach(c => tl.to(c.ic, { autoAlpha: 0, duration: 0.25 }, TN - 0.1));
   J.forEach(([, t], k) => cards.forEach((c, i) => tl.to(c, { filter: i === k ? 'brightness(1.05)' : 'brightness(.42)', scale: i === k ? 1.05 : 0.97, y: i === k ? -14 : 0, duration: 0.4, ease: EASE_IO }, t - 0.05)));
   tl.to(cards, { filter: 'brightness(1)', scale: 1, y: 0, duration: 0.4 }, TF - 0.1);
 
@@ -374,10 +385,9 @@ let hero, portalHome, portalEnjoy;
   tl.fromTo(DB, { scale: 1.1 }, { scale: 1, duration: 6, ease: 'none', immediateRender: false }, T0 - 0.6);
   tl.to(DB, { autoAlpha: 0, duration: 0.8 }, at('then tap') - 0.6);
   lineSweep(T0 - 0.6, L);
-  chapterTitle('Discover', T0 - 0.25, { left: 1000, top: 440, parent: L, hold: 0.75 });
-  chapterLabel('01', 'Discover', T0 + 0.5, TE);
+  chapterLabel('01', 'Discover', T0 + 0.2, TE - 0.5);
 
-  // NEW — radar rings behind the phone (the animatic's discovery engine)
+  // radar rings behind the phone (the discovery engine)
   const RR = svgEl([0, 1, 2, 3].map(() => `<circle cx="620" cy="540" r="120" data-nodraw="1"/>`).join(''), { sw: 1.5 }, L);
   gsap.set(RR, { autoAlpha: 0 });
   tl.to(RR, { autoAlpha: 1, duration: 0.4 }, T0 + 0.3);
@@ -387,79 +397,65 @@ let hero, portalHome, portalEnjoy;
   pose(hero, T0 - 0.75, { x: 620, ry: 12, dur: 0.9 });
   swap(hero, SCR('onboarding.jpg'), T0 - 0.2);
   const e1 = ltext('Explore every destination|[with complete clarity.]', 'h2 cream', 1000, 280, L);
-  rise(e1, T0 + 0.6, { lineGap: [T0 + 0.6, at('with complete clarity')] });
-  const lst = ltext('Layouts.|Views.|Neighborhood.', 'h2 cream', 1000, 520, L, 'line-height:1.35');
-  rise(lst, at('layouts'), { lineGap: [at('layouts'), at('views'), at('neighborhood')] });
-  focusLine(lst, 0, at('layouts')); focusLine(lst, 1, at('views')); focusLine(lst, 2, at('neighborhood'));
+  rise(e1, T0 + 0.2, { lineGap: [T0 + 0.2, at('with complete clarity')] });
+  const lst = ltext('The layouts.|The views.|The neighborhood.', 'h2 cream', 1000, 520, L, 'line-height:1.35');
+  rise(lst, at('the layouts'), { lineGap: [at('the layouts'), at('the views'), at('the neighborhood')] });
+  focusLine(lst, 0, at('the layouts')); focusLine(lst, 1, at('the views')); focusLine(lst, 2, at('the neighborhood'));
   swap(hero, SCR('map.jpg'), at('layouts') - 0.1);
   swap(hero, SCR('city3d.jpg'), at('views') - 0.1);
   tl.to(hero.cur, { scale: 1.28, transformOrigin: '50% 42%', duration: 1.8, ease: 'power2.inOut' }, at('neighborhood'));
   hide(e1, at('then tap') - 0.3, 0.35); hide(lst, at('then tap') - 0.3, 0.35);
 
-  // tap · rotate · choose · walk through
-  pose(hero, at('then tap') - 0.3, { x: 470, ry: 16, dur: 0.8 });
+  // tap · rotate the model · choose your unit (P1: the floor lights up) · walk through (the 3D configurator)
+  const tTap = at('tap'), tRot = at('rotate the model'), tCh = at('choose your unit'), tW = at('walk through'), tB = at('before the first'), tS = at('see the available');
+  pose(hero, at('then tap') - 0.3, { x: 400, ry: 16, dur: 0.8 });
   swap(hero, SCR('walkthrough.png'), at('then tap') - 0.1);
-  tap(hero, 0.2, 0.235, at('tap'));
-  const tr = ltext('Tap.|Rotate.|Choose.|Walk through.', 'h2 cream', 1490, 300, L, 'line-height:1.4');
-  rise(tr, at('tap'), { lineGap: [at('tap'), at('rotate'), at('choose your unit'), at('walk through')] });
-  focusLine(tr, 0, at('tap')); focusLine(tr, 1, at('rotate')); focusLine(tr, 2, at('choose your unit')); focusLine(tr, 3, at('walk through'));
-  const mw = el('<div class="abs persp" style="left:740px;top:280px;width:680px;height:520px"></div>', L);
+  tap(hero, 0.2, 0.235, tTap);
+  const tr = ltext('Tap.|Rotate the model.|Choose your unit.|Walk through.', 'h3 cream', 1530, 330, L, 'line-height:1.75');
+  rise(tr, tTap, { lineGap: [tTap, tRot, tCh, tW] });
+  focusLine(tr, 0, tTap); focusLine(tr, 1, tRot); focusLine(tr, 2, tCh); focusLine(tr, 3, tW);
+  const mw = el('<div class="abs persp" style="left:680px;top:280px;width:680px;height:520px"></div>', L);
   const model = crop(SCR('walkthrough.png'), [0.06, 0.175, 0.94, 0.475], 640, { radius: 26, style: 'left:20px;top:20px;box-shadow:0 60px 120px rgba(0,0,0,.6)' }, mw);
   gsap.set(model, { autoAlpha: 0 });
-  tl.fromTo(model, { autoAlpha: 0, x: -420, scale: 0.45, rotationX: 0, rotationZ: 0 }, { autoAlpha: 1, x: 0, scale: 1, rotationX: 52, rotationZ: -24, duration: 0.9, ease: 'power3.out', immediateRender: false }, at('tap') + 0.25);
-  tl.to(model, { rotationZ: 24, duration: at('choose your unit') - at('rotate') + 0.2, ease: 'sine.inOut' }, at('rotate'));
-  tl.to(model, { autoAlpha: 0, scale: 0.8, duration: 0.35 }, at('choose your unit') - 0.05);
-  // NEW — stacked floors, Floor 12 lifts out (from the animatic)
-  const FL = el('<div class="abs" style="left:780px;top:250px;width:600px;height:600px"></div>', L);
-  let fl = '';
-  for (let i = 0; i < 14; i++) { const y = 470 - i * 26; fl += `<path class="fl${i}" d="M 300 ${y - 60} L 470 ${y} L 300 ${y + 60} L 130 ${y} Z"/>`; }
-  const FS = svgEl(fl, { w: 600, h: 600, sw: 1.6 }, FL);
-  gsap.set(FL, { autoAlpha: 0 });
-  tl.set(FL, { autoAlpha: 1 }, at('choose your unit'));
-  drawAll(FS, at('choose your unit'), 0.5, 0.03);
-  tl.to(FS.querySelector('.fl11'), { fill: 'rgba(214,165,140,.55)', y: -40, x: 70, duration: 0.6, ease: 'back.out(1.6)' }, at('choose your unit') + 0.6);
-  const flab = el('<div class="chip dark" style="left:450px;top:80px;font-size:22px;padding:12px 22px"><span class="dot"></span>Floor 12 · Unit A4</div>', FL);
-  gsap.set(flab, { autoAlpha: 0 }); pop(flab, at('choose your unit') + 0.8);
-  // NEW — isometric room with Modern / Classic toggle (from the animatic)
-  const RM = el('<div class="abs" style="left:760px;top:250px;width:640px;height:600px"></div>', L);
-  const RS = svgEl(`<path d="M 320 60 L 560 180 L 560 420 L 320 540 L 80 420 L 80 180 Z"/><path d="M 320 60 L 320 300 L 80 420 M 320 300 L 560 420"/>
-      <path class="sofa" d="M 170 380 L 260 425 L 260 395 L 170 350 Z" fill="rgba(214,165,140,.5)"/><ellipse cx="380" cy="400" rx="50" ry="24"/><path d="M 470 230 L 470 330"/>`, { w: 640, h: 560, sw: 1.8 }, RM);
-  const tog = el(`<div class="abs" style="left:170px;top:540px;width:300px;height:54px;border-radius:999px;border:1px solid rgba(214,165,140,.5);background:rgba(4,30,66,.6)">
-      <div class="k" style="position:absolute;left:4px;top:4px;width:144px;height:44px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
-      <div style="position:absolute;left:4px;top:0;width:144px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#041E42">Modern</div>
-      <div style="position:absolute;right:4px;top:0;width:144px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#F4EEE8">Classic</div></div>`, RM);
-  gsap.set([RM, tog], { autoAlpha: 0 });
-  const tW = at('walk through');
-  tl.to(FL, { autoAlpha: 0, duration: 0.3 }, tW - 0.35);
-  tl.set(RM, { autoAlpha: 1 }, tW - 0.2); drawAll(RS, tW - 0.2, 0.6, 0.05);
-  pop(tog, tW + 0.2);
-  tl.to(tog.querySelector('.k'), { left: 152, duration: 0.45, ease: 'power3.inOut' }, tW + 0.85);
-  tl.to(RS.querySelector('.sofa'), { fill: 'rgba(155,203,235,.45)', duration: 0.4 }, tW + 0.9);
-  const tB = at('before the first'), tS = at('see the available');
-  tl.to(RM, { scale: 2.6, autoAlpha: 0, duration: 0.7, ease: 'power3.in' }, tB - 0.75);
-  hide(tr, tB - 0.6, 0.35);
-
-  // dive through the room into the corridor, then the corridor shrinks back into the phone screen
-  const C = zlayer(60); gsap.set(C, { autoAlpha: 0 });
-  const cor = el('<div class="layer"></div>', C); vclip(cor, 'interior', tB - 0.75, tS + 0.5, { rate: 0.8 });
-  el('<div class="layer shade-b"></div>', C);
-  portalOpen(C, tB - 0.75, { l: 1020, t: 490, w: 120, h: 120, r: 10 }, 0.85);
-  kenburns(cor, tB - 0.75, tS + 0.6, 1.0, 1.4);
-  const bfs = ltext('Before the first stone|is even laid,', 'h2 cream', 140, 720, C);
-  rise(bfs, tB, { lineGap: [tB, at('is even laid')] }); hide(bfs, tS - 0.55, 0.25);
-  setPoseAt(hero, tB + 0.3, { x: 1300, ry: 0 });
-  swap(hero, SCR('explore.jpg'), tB + 0.3, 'fade');
-  portalClose(C, tS - 0.4, screenRect(hero, 1300), 0.85);
-  pose(hero, tS + 0.45, { x: 1300, ry: -12, dur: 0.9, ease: 'power2.inOut' });
-  const rt = ltext('See available units|[in real time.]', 'h2 cream', 170, 250, L);
-  rise(rt, tS, { lineGap: [tS, at('in real time')] }); hide(rt, at('compare them') - 0.25, 0.3);
+  tl.fromTo(model, { autoAlpha: 0, x: -420, scale: 0.45, rotationX: 0, rotationZ: 0 }, { autoAlpha: 1, x: 0, scale: 1, rotationX: 52, rotationZ: -24, duration: 0.9, ease: 'power3.out', immediateRender: false }, tTap + 0.25);
+  tl.to(model, { rotationZ: 24, duration: tCh - tRot + 0.2, ease: 'sine.inOut' }, tRot);
+  tl.to(model, { autoAlpha: 0, scale: 0.8, duration: 0.35 }, tCh - 0.1);
+  // one window carries "choose your unit" and "walk through" and then closes into the phone
+  const WL = zlayer(60); show(WL, tCh - 0.25, null, 0.01);
+  const win = el('<div class="abs" style="left:690px;top:250px;width:800px;height:580px;border-radius:34px;overflow:hidden;box-shadow:0 60px 140px rgba(0,0,0,.55);background:#0b2a55"></div>', WL);
+  const u1 = el('<div class="abs" style="inset:0"></div>', win);
+  gclip(u1, 'p1', tCh - 0.25, tW + 0.6, { from: 3.4 });
+  tl.fromTo(win, { clipPath: 'inset(45% 40% 45% 40% round 34px)' }, { clipPath: 'inset(0% 0% 0% 0% round 34px)', duration: 0.7, ease: 'power3.out', immediateRender: false }, tCh - 0.25);
+  tl.fromTo(u1, { scale: 1.06 }, { scale: 1.16, duration: tW - tCh + 0.8, ease: 'none', immediateRender: false }, tCh - 0.25);
+  const fchip = el('<div class="chip dark" style="left:440px;top:300px;font-size:22px;padding:12px 22px"><span class="dot"></span>Floor 12 · Unit A4</div>', win);
+  gsap.set(fchip, { autoAlpha: 0 }); pop(fchip, tCh + 0.75); out(fchip, tW - 0.15, 0.25);
+  // the 3D configurator (the client's clip, its green background turned brand navy)
+  const u2 = el('<div class="abs" style="inset:0;background:#0c2856"></div>', win);
+  gsap.set(u2, { autoAlpha: 0 });
+  gclip(u2, 'cfg3d', tW - 0.2, tS + 0.2, { fit: 'cover' });
+  tl.fromTo(u2, { autoAlpha: 0, clipPath: 'inset(0% 0% 0% 100%)' }, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: false }, tW - 0.2);
+  // window grows as the list leaves
+  hide(tr, tB - 0.35, 0.3);
+  tl.to(win, { left: 640, top: 120, width: 1180, height: 664, duration: 0.8, ease: 'power3.inOut' }, tB - 0.3);
+  const bfs = ltext('Before the first foundation|stone is even laid,', 'h2 cream', 640, 830, WL);
+  rise(bfs, tB, { lineGap: [tB, at('stone is even laid')] }); hide(bfs, tS - 0.35, 0.3);
+  // flatten the phone, then the window closes into its screen
+  pose(hero, tS - 1.0, { x: 400, ry: 0, dur: 0.5, ease: 'power2.inOut' });
+  swap(hero, SCR('explore.jpg'), tS - 0.6, 'fade');
+  const rr0 = screenRect(hero, 400);
+  tl.to(win, { left: rr0.l, top: rr0.t, width: rr0.w, height: rr0.h, borderRadius: rr0.r, duration: 0.75, ease: 'power3.inOut' }, tS - 0.45);
+  tl.to(win, { autoAlpha: 0, duration: 0.2 }, tS + 0.15);
+  tl.set(WL, { autoAlpha: 0 }, tS + 0.4);
+  pose(hero, tS + 0.2, { x: 1400, ry: -12, dur: 0.9, ease: 'power2.inOut' });
+  const rt = ltext('See the available units|[in real time.]', 'h2 cream', 150, 250, L, 'font-size:64px');
+  rise(rt, tS + 0.2, { lineGap: [tS + 0.2, at('in real time')] }); hide(rt, at('compare them') - 0.25, 0.3);
   const G = el('<div class="abs" style="left:175px;top:480px;width:560px;height:330px"></div>', L);
   const gr = rng(4), cells = [];
   for (let rr = 0; rr < 4; rr++) for (let cc = 0; cc < 7; cc++) {
     const c = el(`<div class="abs" style="left:${cc * 78}px;top:${rr * 78}px;width:64px;height:64px;border-radius:12px;border:1.5px solid rgba(214,165,140,.6)"></div>`, G);
     gsap.set(c, { autoAlpha: 0 }); cells.push(c);
-    tl.fromTo(c, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', immediateRender: false }, tS + 0.1 + (rr * 7 + cc) * 0.018);
-    if (gr() < 0.45) tl.to(c, { background: 'rgba(214,165,140,.85)', duration: 0.25 }, at('in real time') + gr() * 1.3);
+    tl.fromTo(c, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', immediateRender: false }, tS + 0.5 + (rr * 7 + cc) * 0.016);
+    if (gr() < 0.45) tl.to(c, { background: 'rgba(214,165,140,.85)', duration: 0.25 }, at('in real time') + gr() * 1.0);
   }
   const live = pop(chip('<span class="dot live"></span>Live · 95 units available', 640, 160, L), at('in real time') + 0.3);
   out(live, at('compare them') - 0.25);
@@ -467,7 +463,7 @@ let hero, portalHome, portalEnjoy;
   tl.to(G, { autoAlpha: 0, x: -60, duration: 0.35, ease: EASE_IN }, at('compare them') + 0.25);
   pose(hero, at('compare them') - 0.2, { x: 960, ry: 0, dur: 0.8 });
   swap(hero, SCR('compare.png'), at('compare them'));
-  const cm = ltext('Compare|[side by side.]', 'h2 cream', 150, 130, L);
+  const cm = ltext('Compare them|[side by side.]', 'h2 cream', 150, 130, L);
   rise(cm, at('compare them'), { lineGap: [at('compare them'), at('side by side')] }); hide(cm, at('filter by') - 0.2, 0.3);
   const ca = crop(SCR('compare.png'), [0.03, 0.055, 0.5, 0.31], 360, { radius: 24, style: 'left:290px;top:430px;box-shadow:0 40px 90px rgba(0,0,0,.5)' }, L);
   const cb = crop(SCR('compare.png'), [0.5, 0.055, 0.97, 0.31], 360, { radius: 24, style: 'left:1270px;top:430px;box-shadow:0 40px 90px rgba(0,0,0,.5)' }, L);
@@ -477,46 +473,83 @@ let hero, portalHome, portalEnjoy;
     tl.to(c, { autoAlpha: 0, x: dx * 0.6, scale: 0.7, duration: 0.4, ease: EASE_IN }, at('filter by') - 0.3);
   });
 
-  // filter
-  swap(hero, SCR('filter.jpg'), at('filter by') - 0.05);
-  const fl2 = ltext('Filter by|[what matters.]', 'h2 cream', 150, 130, L);
-  rise(fl2, at('filter by'), { lineGap: [at('filter by'), at('space')] }); hide(fl2, TE - 0.3, 0.3);
-  [['Space', at('space'), 'L', 360], ['Distance', at('distance'), 'R', 380], ['Family', at('family'), 'L', 560], ['Individual', at('individual'), 'R', 600], ['Your community', at('residential community'), 'L', 760]].forEach(([s, t, side, y]) => {
-    const c = chip(`<span class="dot"></span>${s}`, 0, y, L, 'dark');
-    if (side === 'L') { c.style.right = `${W - 700}px`; c.style.left = 'auto'; } else c.style.left = '1220px';
-    pop(c, t, { x: side === 'L' ? 60 : -60, scale: 0.9 }); out(c, TE - 0.3);
+  // filter — the client's Filters reference: a small UI card for every spoken filter
+  const tF = at('filter by');
+  swap(hero, SCR('filter.jpg'), tF - 0.05);
+  const fl2 = ltext('Filter by', 'h1 cream', 150, 128, L);
+  rise(fl2, tF); hide(fl2, TE - 0.3, 0.3);
+  const FC = (x, y, w, h, inner) => { const c = el(`<div class="card" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;padding:22px 24px;border-radius:20px"><div style="position:absolute;left:50%;top:9px;width:44px;height:4px;margin-left:-22px;border-radius:2px;background:rgba(4,30,66,.12)"></div>${inner}</div>`, L); gsap.set(c, { autoAlpha: 0 }); return c; };
+  const slider = (lab, unit) => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:21px"><span>${lab}</span><span style="background:rgba(4,30,66,.07);border-radius:999px;padding:6px 18px;font-size:19px">${unit}</span></div>
+      <div style="position:relative;margin-top:22px;height:4px;border-radius:2px;background:rgba(4,30,66,.12)"><div class="fill" style="position:absolute;left:0;top:0;height:4px;width:10%;border-radius:2px;background:#041E42"></div>
+      <div class="kb" style="position:absolute;left:10%;top:-11px;width:26px;height:26px;margin-left:-13px;border-radius:50%;border:2.5px solid #041E42;background:#fff"></div></div>`;
+  const area = FC(200, 318, 290, 118, slider('Area', 'Sq. Ft.'));
+  const beds = FC(220, 510, 270, 120, `<div style="display:flex;justify-content:space-between;font-size:20px"><span>Bedrooms</span><span>Bathrooms</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px">${['bd', 'bt'].map(k => `<div style="width:108px;height:42px;border-radius:999px;background:rgba(4,30,66,.07);display:flex;align-items:center;justify-content:center;gap:12px;font-size:21px"><span class="${k}">0</span><span style="opacity:.5">⌄</span></div>`).join('')}</div>`);
+  const mapc = FC(200, 690, 180, 262, `<div style="height:84px;border-radius:12px;background:linear-gradient(135deg,#e9e4dc 0 45%,#cfe3c6 45% 60%,#e9e4dc 60%);position:relative;overflow:hidden">
+      <div style="position:absolute;left:30%;top:0;bottom:0;width:6px;background:#fff"></div><div style="position:absolute;top:45%;left:0;right:0;height:6px;background:#fff"></div>
+      <svg viewBox="0 0 40 40" width="44" height="44" style="position:absolute;left:50%;top:50%;margin:-22px 0 0 -22px"><path d="M6 10l9-4 10 4 9-4v24l-9 4-10-4-9 4z M15 6v24 M25 10v24" fill="none" stroke="#041E42" stroke-width="2.4" stroke-linejoin="round"/></svg></div>
+      ${['Schools', 'Parks', 'Shops'].map(s => `<div class="mr" style="font-size:20px;margin-top:13px;display:flex;gap:10px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#A27063"></span>${s}</div>`).join('')}`);
+  const rad = FC(1462, 330, 296, 118, slider('Radius', 'KM'));
+  const pref = FC(1462, 540, 262, 150, ['Studio', 'Pet-friendly', 'Gym'].map((s, i) => `<div style="display:flex;align-items:center;gap:14px;font-size:21px;margin-top:${i ? 12 : 4}px"><span class="cb" style="width:24px;height:24px;border-radius:6px;border:2px solid rgba(4,30,66,.4);display:inline-flex;align-items:center;justify-content:center"></span>${s}</div>`).join(''));
+  const fchips = [['Space', at('space'), 532, 352], ['Distance', at('distance'), 1214, 372], ['Family', at('family'), 530, 552], ['Individual', at('individual'), 1214, 592], ['Residential community', at('residential community'), 360, 760]].map(([s, t, x, y]) => {
+    const c = chip(`<span class="dot"></span>${s}`, x, y, L, 'dark'); pop(c, t, { x: x < 960 ? 60 : -60, scale: 0.9 }); out(c, TE - 0.3); return c;
   });
-  tap(hero, 0.25, 0.825, at('space')); tap(hero, 0.43, 0.825, at('family')); tap(hero, 0.72, 0.947, at('residential community') + 0.3);
+  [[area, at('space') - 0.1], [rad, at('distance') - 0.1], [beds, at('family') - 0.1], [pref, at('individual') - 0.1], [mapc, at('residential community') - 0.1]].forEach(([c, t]) => { pop(c, t, { y: 30, scale: 0.92 }); out(c, TE - 0.3); });
+  const slide = (c, t, to) => { tl.to(c.querySelector('.fill'), { width: to, duration: 0.8, ease: 'power2.inOut' }, t); tl.to(c.querySelector('.kb'), { left: to, duration: 0.8, ease: 'power2.inOut' }, t); };
+  slide(area, at('space') + 0.3, '38%'); slide(rad, at('distance') + 0.3, '42%');
+  count(beds.querySelector('.bd'), 0, 3, at('family') + 0.3, 0.6); count(beds.querySelector('.bt'), 0, 2, at('family') + 0.45, 0.6);
+  pref.querySelectorAll('.cb').forEach((b, i) => { if (i !== 1) tl.to(b, { background: '#041E42', borderColor: '#041E42', duration: 0.2 }, at('individual') + 0.3 + i * 0.15); });
+  mapc.querySelectorAll('.mr').forEach((m, i) => tl.fromTo(m, { opacity: 0.25 }, { opacity: 1, duration: 0.25, immediateRender: false }, at('residential community') + 0.2 + i * 0.15));
+  tap(hero, 0.25, 0.825, at('space')); tap(hero, 0.43, 0.825, at('family')); tap(hero, 0.72, 0.947, at('residential community') + 0.4);
 
-  // dive through the phone screen into "perfect home"
+  // dive through the phone into the empty apartment that furnishes itself (P2)
   const P = zlayer(60); gsap.set(P, { autoAlpha: 0 }); portalHome = P;
-  const pw = el('<div class="layer"></div>', P); vclip(pw, 'window', TE - 0.5, TV + 0.4, { rate: 0.9 });
-  el('<div class="layer shade-l"></div>', P);
-  portalOpen(P, TE - 0.5, screenRect(hero, 960), 0.85);
-  kenburns(pw, TE - 0.25, TV + 0.5, 1.15, 1.0, { from: { x: -30 }, to: { x: 0 } });
-  rise(ltext('Find your|[perfect home.]', 'h1 cream', 140, 340, P), TE, { lineGap: [TE, at('perfect home')] });
-  rise(ltext('Not just an empty room.', 'h3 cream', 145, 610, P, 'opacity:.85'), at('not just an empty'));
+  P.style.background = 'radial-gradient(120% 100% at 60% 40%,#c9d3d8,#b9c3c9)';
+  const pw = el('<div class="abs" style="left:300px;top:60px;width:1620px;height:911px"></div>', P);
+  gclip(pw, 'p2', TE - 0.55, TV + 2.0, { from: 0 });
+  portalOpen(P, TE - 0.55, screenRect(hero, 960), 0.85);
+  tl.fromTo(pw, { scale: 1.08 }, { scale: 1.0, duration: TV - TE + 1.2, ease: 'power1.out', immediateRender: false }, TE - 0.55);
+  rise(ltext('So you can find|your [perfect home,]', 'h1 navy', 120, 110, P), TE, { lineGap: [TE, at('your perfect home')] });
+  rise(ltext('not just an empty room.', 'h2 navy', 124, 340, P, 'opacity:.8'), at('not just an empty'));
 }
 
 // =====================================================================
 // 02 OWN
 // =====================================================================
 {
-  const T0 = at('verify your identity'), TH = at('when it is time'), TJ = at('you simply enjoy'), T1 = at('your home');
-  const L = layer('bg-navy-soft persp'); show(L, T0 - 0.85, T1 + 0.4, 0.35, 0.6);
-  ambient(L, T0 - 0.85, T1 + 0.4, { seed: 5 });
+  const T0 = at('verify your identity'), TH = at('when it is time');
+  const L = layer('bg-navy-soft persp'); show(L, T0 - 0.85, TH + 0.6, 0.35, 0.5);
+  ambient(L, T0 - 0.85, TH + 0.6, { seed: 5 });
   lineSweep(T0 - 0.2, L, { dir: -1 });
-  chapterTitle('Own', T0 - 0.2, { left: 170, top: 190, parent: L, hold: 0.55 });
-  chapterLabel('02', 'Own', T0 + 0.4, TJ - 0.2);
-  // "perfect home" shrinks back into the phone, which now shows Login
+  chapterLabel('02', 'Create', T0 + 0.3, TH - 0.4);
   const p = hero;
   setPoseAt(p, T0 - 0.95, { x: 1260, ry: 0 });
   swap(p, SCR('login.jpg'), T0 - 0.95, 'fade');
-  portalClose(portalHome, T0 - 0.8, screenRect(p, 1260), 0.85);
   pose(p, T0 + 0.1, { x: 1260, ry: -12, dur: 0.8, ease: 'power2.inOut' });
 
-  const vt = ltext('Verify your identity|[in seconds.]', 'h2 cream', 170, 410, L);
-  rise(vt, T0 + 0.2, { lineGap: [T0 + 0.2, at('in seconds')] }); hide(vt, at('request information') - 0.3, 0.3);
+  // the furnished apartment settles into a style card; the style switches as the client's P3 morphs
+  const CR = { l: 140, t: 380, w: 860, h: 484, r: 30 };
+  const P = portalHome, pw = P.firstChild;
+  tl.to(P.querySelectorAll('.h1,.h2'), { autoAlpha: 0, duration: 0.3 }, T0 - 0.75);
+  tl.to(P, { clipPath: insetFor(CR), duration: 0.85, ease: 'power3.inOut' }, T0 - 0.45);
+  tl.to(pw, { left: CR.l - 60, top: CR.t - 30, width: CR.w + 120, height: (CR.w + 120) * 9 / 16, duration: 0.85, ease: 'power3.inOut' }, T0 - 0.45);
+  const p3 = el(`<div class="abs" style="left:${CR.l}px;top:${CR.t}px;width:${CR.w}px;height:${CR.h}px;border-radius:30px;overflow:hidden"></div>`, P);
+  const tP3 = T0 + 0.45, morph = tP3 + (3.05 - 1.2);
+  gclip(p3, 'p3', tP3, morph + 1.0, { from: 1.2 });
+  gsap.set(p3, { autoAlpha: 0 });
+  tl.to(p3, { autoAlpha: 1, duration: 0.5 }, tP3);
+  const pill = el(`<div class="abs" style="left:${CR.l + 24}px;top:${CR.t + CR.h - 78}px;width:380px;height:54px;border-radius:999px;background:rgba(4,30,66,.82);border:1px solid rgba(214,165,140,.5)">
+      <div class="k" style="position:absolute;left:4px;top:4px;width:150px;height:46px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
+      <div class="o1" style="position:absolute;left:4px;top:0;width:150px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#041E42">Classic</div>
+      <div class="o2" style="position:absolute;left:158px;top:0;width:218px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#F4EEE8">Contemporary</div></div>`, P);
+  gsap.set(pill, { autoAlpha: 0 }); pop(pill, tP3 + 0.2);
+  tl.to(pill.querySelector('.k'), { left: 158, width: 218, duration: 0.45, ease: 'power3.inOut' }, morph - 0.2);
+  tl.to(pill.querySelector('.o1'), { color: '#F4EEE8', duration: 0.2 }, morph - 0.1); tl.to(pill.querySelector('.o2'), { color: '#041E42', duration: 0.2 }, morph - 0.1);
+  const cardOut = at('request information') - 0.15;
+  tl.to(P, { clipPath: `inset(${CR.t}px ${W - CR.l - CR.w + 700}px ${H - CR.t - CR.h}px ${CR.l - 700}px round 30px)`, autoAlpha: 0, duration: 0.5, ease: 'power3.in' }, cardOut);
+
+  const vt = ltext('Verify your identity|[in seconds.]', 'h2 cream', 150, 120, L);
+  rise(vt, T0 + 0.1, { lineGap: [T0 + 0.1, at('in seconds')] }); hide(vt, at('request information') - 0.3, 0.3);
   const scrim = ov(p, '', [0, 0, 1, 1], 'background:rgba(2,12,31,.62);z-index:12');
   const fid = ov(p, `<svg viewBox="0 0 100 100" width="100%" height="100%"><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">
     <path d="M8 26V14a6 6 0 0 1 6-6h12M74 8h12a6 6 0 0 1 6 6v12M92 74v12a6 6 0 0 1-6 6H74M26 92H14a6 6 0 0 1-6-6V74"/>
@@ -533,51 +566,72 @@ let hero, portalHome, portalEnjoy;
   pop(ok, tF + 1.15);
   tl.to([scrim, fid, ok], { autoAlpha: 0, duration: 0.3 }, at('request information') - 0.3);
 
-  // request · visit · reserve
-  pose(p, at('request information') - 0.4, { x: 1150, ry: -12, dur: 0.7 });
+  // request · visit · reserve (the reservation carries the furniture chosen in 3D, with the running total)
+  pose(p, at('request information') - 0.4, { x: 1080, ry: -12, dur: 0.7 });
   swap(p, SCR('project.jpg'), at('request information') - 0.15);
-  const rv = ltext('Request information.|Book a dedicated visit.|[Reserve your unit.]', 'h2 cream', 170, 330, L, 'line-height:1.45');
-  rise(rv, at('request information'), { lineGap: [at('request information'), at('book a dedicated'), at('reserve your unit')] });
-  focusLine(rv, 0, at('request information')); focusLine(rv, 1, at('book a dedicated')); focusLine(rv, 2, at('reserve your unit'));
+  const rv = ltext('Request information.|Book a dedicated visit.|[And reserve your unit.]', 'h2 cream', 150, 330, L, 'line-height:1.45');
+  rise(rv, at('request information'), { lineGap: [at('request information'), at('book a dedicated'), at('and reserve your unit')] });
+  focusLine(rv, 0, at('request information')); focusLine(rv, 1, at('book a dedicated')); focusLine(rv, 2, at('and reserve your unit'));
   hide(rv, at('review your contract') - 0.3, 0.35);
   tap(p, 0.5, 0.55, at('request information') + 0.2);
-  const k1 = pop(chip(`<span class="tick">${ICON.check}</span>Information requested`, 0, 300, L), at('request information') + 0.4);
-  const k2 = pop(chip(`<span class="tick">${ICON.check}</span>Visit booked · Thu 10:00 AM`, 0, 400, L), at('book a dedicated') + 0.4);
+  const k1 = pop(chip(`<span class="tick">${ICON.check}</span>Information requested`, 0, 330, L), at('request information') + 0.4);
+  const k2 = pop(chip(`<span class="tick">${ICON.check}</span>Visit booked · Thu 10:00 AM`, 0, 430, L), at('book a dedicated') + 0.4);
+  [k1, k2].forEach(k => { k.style.left = 'auto'; k.style.right = '40px'; out(k, at('reserve your unit') - 0.25, 0.3); });
   swap(p, SCR('payment.jpg'), at('reserve your unit') - 0.15);
-  tap(p, 0.5, 0.973, at('reserve your unit') + 0.6);
-  const k3 = pop(chip(`<span class="tick">${ICON.check}</span>Unit A4 reserved`, 0, 500, L), at('reserve your unit') + 0.7);
-  [k1, k2, k3].forEach(k => { k.style.left = 'auto'; k.style.right = '40px'; out(k, at('review your contract') - 0.3); });
+  tap(p, 0.5, 0.973, at('reserve your unit') + 0.4);
+  const tRv = at('reserve your unit');
+  const CC = { l: 1360, t: 170, w: 500, h: 750, r: 28 };
+  const cart = el(`<div class="card" style="left:${CC.l}px;top:${CC.t}px;width:${CC.w}px;height:${CC.h}px;padding:30px 34px;border-radius:28px">
+      <div class="label" style="font-size:14px;color:#A27063">Your selection</div>
+      <div class="plan" style="position:relative;height:190px;margin-top:16px;border-radius:18px;overflow:hidden;background:#b0b9c1"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:18px;font-size:24px"><span>Unit A4 · Floor 12</span><span>SAR 2,100,000</span></div>
+      <div class="sofa" style="position:relative;height:150px;margin-top:16px;border-radius:18px;background:linear-gradient(160deg,#F4EEE8,#E6DACE);overflow:hidden"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:24px"><span>Furniture · Contemporary</span><span>SAR <span class="fu">0</span></span></div>
+      <div style="height:1px;background:rgba(4,30,66,.12);margin:22px 0 18px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="label" style="font-size:15px">Total</span><span style="font-size:44px;font-weight:400">SAR <span class="tot">2,100,000</span></span></div>
+      <div style="margin-top:20px;height:58px;border-radius:999px;background:#041E42;color:#F4EEE8;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:500">Reserve unit A4</div></div>`, L);
+  const sbox = el('<div class="abs" style="left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform:scale(.36)"></div>', cart.querySelector('.sofa'));
+  gclip(sbox, 'sofa', tRv - 0.2, tRv + 4, { fit: 'fill' });
+  gclip(cart.querySelector('.plan'), 'p5', tRv - 0.6, tRv + 4, { from: 2.6 });
+  gsap.set(cart, { autoAlpha: 0 });
+  tl.fromTo(cart, { autoAlpha: 0, x: 80, rotationY: -18, transformPerspective: 1800 }, { autoAlpha: 1, x: 0, rotationY: 0, duration: 0.6, ease: EASE, immediateRender: false }, tRv - 0.25);
+  count(cart.querySelector('.fu'), 0, 186500, tRv + 0.35, 0.9, v => Math.round(v).toLocaleString('en-US'));
+  count(cart.querySelector('.tot'), 2100000, 2286500, tRv + 0.35, 0.9, v => Math.round(v).toLocaleString('en-US'));
 
-  // contract — NEW swipe-to-sign paper (from the animatic) + live signature
-  const tR = at('review your contract'), tSg = at('then sign it');
-  pose(p, tR - 0.35, { x: 640, ry: 12, dur: 0.8 });
-  swap(p, SCR('esign.png'), tR - 0.1);
-  const sg = ltext('Review your contract.|Sign it digitally|and [securely.]', 'h2 cream', 1060, 140, L, 'line-height:1.3');
-  rise(sg, tR, { lineGap: [tR, tSg, at('and securely')] }); hide(sg, at('with a single platform') - 0.3, 0.35);
-  const paper = el(`<div class="card" style="left:1080px;top:470px;width:470px;height:360px;padding:34px 40px">
-      <div class="label" style="font-size:14px;color:#A27063">Sales agreement · Villa A4</div>
-      ${[90, 100, 84, 96, 70].map(w => `<div style="height:9px;border-radius:5px;background:rgba(4,30,66,.12);margin-top:22px;width:${w}%"></div>`).join('')}
-      <div class="sl" style="position:absolute;left:40px;right:40px;bottom:30px;height:56px;border-radius:999px;background:rgba(4,30,66,.08)">
-        <div class="kn" style="position:absolute;left:5px;top:5px;width:46px;height:46px;border-radius:50%;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(4,30,66,.55)">Swipe to sign</div></div></div>`, L);
-  gsap.set(paper, { autoAlpha: 0 });
-  tl.fromTo(paper, { autoAlpha: 0, y: 80, rotationX: 25, transformPerspective: 1600 }, { autoAlpha: 1, y: 0, rotationX: 0, duration: 0.7, ease: EASE, immediateRender: false }, tR + 0.2);
-  tl.to(paper.querySelector('.kn'), { left: 333, duration: 0.7, ease: 'power2.inOut' }, tSg + 0.2);
-  tl.to(paper.querySelector('.sl'), { background: 'rgba(162,112,99,.25)', duration: 0.3 }, tSg + 0.8);
-  const patch = ov(p, '', [0.285, 0.565, 0.42, 0.085], 'background:#f1e9e3');
-  tl.set(patch, { clipPath: 'inset(0% 0% 0% 0%)' }, tR - 0.1);
-  tl.to(patch, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.95, ease: 'power1.inOut' }, tSg + 0.2);
-  tap(p, 0.5, 0.815, at('and securely'));
-  tl.to(paper, { x: -520, y: 60, scale: 0.25, autoAlpha: 0, duration: 0.6, ease: 'power3.in' }, at('and securely') + 0.25);
-  const sb = pop(chip('<span class="tick">' + ICON.check + '</span>Signed securely', 880, 860, L), at('and securely') + 0.4);
-  out(sb, at('with a single platform') - 0.3);
+  // review & sign: the agreement — with the full price — signed on the tablet (P6)
+  const tR = at('review your contract'), tSg = at('then sign it'), tP = at('with a single platform');
+  const SG = zlayer(60); gsap.set(SG, { autoAlpha: 0 });
+  const doc = el(`<div style="position:absolute;inset:0;background:#FBF8F5;color:#041E42;padding:58px 70px;font-family:Huwiya">
+      <div style="display:flex;justify-content:space-between;align-items:center"><img src="${A('brand/logo-navy.png')}" style="height:54px"><span class="label" style="font-size:20px;color:#A27063">Sales agreement</span></div>
+      <div style="font-size:40px;margin-top:40px">Unit A4 · Floor 12</div>
+      ${[['Unit price', '2,100,000'], ['Furniture · Contemporary', '186,500']].map(([a, b]) => `<div style="display:flex;justify-content:space-between;font-size:30px;margin-top:24px;opacity:.8"><span>${a}</span><span>SAR ${b}</span></div>`).join('')}
+      <div style="height:2px;background:rgba(4,30,66,.12);margin:28px 0 20px"></div>
+      <div style="display:flex;justify-content:space-between;font-size:42px"><span>Total</span><span>SAR 2,286,500</span></div>
+      <div style="position:absolute;left:70px;right:70px;bottom:70px;height:190px;border-radius:20px;border:2px dashed rgba(4,30,66,.25)">
+        <div class="label" style="position:absolute;left:24px;top:16px;font-size:16px;opacity:.6">Signature</div>
+        <svg viewBox="0 0 600 160" style="position:absolute;left:60px;top:20px;width:620px;height:160px"><path class="sig" d="M 20 110 C 60 30 90 30 80 100 S 120 150 150 80 S 190 40 200 100 C 210 140 240 60 270 90 S 330 120 360 70 C 380 40 400 120 430 100 S 520 60 580 80" fill="none" stroke="#041E42" stroke-width="5" stroke-linecap="round"/></svg>
+        <div class="sd" style="position:absolute;right:22px;top:16px;display:flex;align-items:center;gap:10px;font-size:22px;color:#A27063"><span class="tick" style="width:34px;height:34px">${ICON.check}</span>Signed securely</div></div></div>`);
+  gscreen(SG, 'p6', tR - 0.3, tP + 0.2, doc, { uw: 1180, uh: 820, from: 0 });
+  const sh0 = el('<div class="layer" style="background:linear-gradient(180deg,rgba(244,238,232,.75),rgba(244,238,232,0) 40%)"></div>', SG);
+  portalOpen(SG, tR - 0.3, CC, 0.75);
+  tl.to(cart, { autoAlpha: 0, duration: 0.2 }, tR + 0.4);
+  const sig = doc.querySelector('.sig'); const SL = 1400;
+  gsap.set(sig, { strokeDasharray: SL, strokeDashoffset: SL });
+  tl.to(sig, { strokeDashoffset: 0, duration: 2.2, ease: 'power1.inOut' }, tR + 0.4);
+  const sd = doc.querySelector('.sd'); gsap.set(sd, { autoAlpha: 0 }); pop(sd, at('and securely') + 0.1);
+  const sg1 = ltext('Review your contract.', 'h2 navy', 120, 150, SG);
+  rise(sg1, tR); hide(sg1, tSg - 0.15, 0.25);
+  const sg2 = ltext('Then sign it digitally|and [securely.]', 'h2 navy', 120, 150, SG);
+  rise(sg2, tSg, { lineGap: [tSg, at('and securely')] }); hide(sg2, tP - 0.85, 0.3);
+  // the tablet scene closes into the phone, which now shows the profile
+  setPoseAt(p, tP - 0.95, { x: 1260, ry: 0 });
+  swap(p, SCR('profile.jpg'), tP - 0.95, 'fade');
+  portalClose(SG, tP - 0.8, screenRect(p, 1260), 0.85);
 
-  // everything with you + NEW payment ring / milestones / live (from the animatic)
-  const tP = at('with a single platform');
-  pose(p, tP - 0.35, { x: 1260, ry: -12, dur: 0.8 });
-  swap(p, SCR('profile.jpg'), tP - 0.1);
-  const op = ltext('One platform.|[Everything with you.]', 'h2 cream', 170, 260, L);
-  rise(op, tP, { lineGap: [tP, at('keeps everything')] }); hide(op, at('every payment') - 0.25, 0.3);
+  // everything with you + payment ring / milestones / live
+  pose(p, tP + 0.1, { x: 1260, ry: -12, dur: 0.8 });
+  const op = ltext('With a single platform,|[ZOOD] keeps everything with you.', 'h2 cream', 150, 260, L);
+  rise(op, tP, { lineGap: [tP, at('zood keeps everything')] }); hide(op, at('every payment') - 0.25, 0.3);
   const ev = ltext('Every payment.|Every stage.|Every update.', 'h2 cream', 170, 150, L, 'line-height:1.3');
   rise(ev, at('every payment'), { lineGap: [at('every payment'), at('every stage'), at('every update')] });
   focusLine(ev, 0, at('every payment')); focusLine(ev, 1, at('every stage')); focusLine(ev, 2, at('every update'));
@@ -625,8 +679,8 @@ let hero, portalHome, portalEnjoy;
   tl.to(rep, { autoAlpha: 0, y: -60, duration: 0.35, ease: EASE_IN }, at('and watch your') - 0.25);
   const rl = pop(chip('Monthly report · PDF', 1100, 790, L), at('access reports') + 0.4); out(rl, at('and watch your') - 0.25);
   const tW = at('and watch your');
-  const lw = ltext('Watch your project|take shape, [live.]', 'h2 cream', 1060, 170, L);
-  rise(lw, tW, { lineGap: [tW, at('take shape')] }); hide(lw, TH - 0.35, 0.35);
+  const lw = ltext('Watch your project take shape|through [live updates.]', 'h2 cream', 1060, 170, L, 'font-size:64px');
+  rise(lw, tW, { lineGap: [tW, at('through live updates')] }); hide(lw, TH - 0.35, 0.35);
   const lv = el('<div class="tile" style="left:1060px;top:420px;width:700px;height:300px;border-radius:30px;box-shadow:0 50px 100px rgba(0,0,0,.5)"></div>', L);
   vclip(lv, 'street', tW - 0.2, TH, { rate: 1 });
   gsap.set(lv, { autoAlpha: 0 });
@@ -639,143 +693,196 @@ let hero, portalHome, portalEnjoy;
   pose(p, TH - 0.45, { x: 490, y: 620, rx: 58, rz: -28, s: 0.6, dur: 0.9 });
   tl.to(p, { autoAlpha: 0, duration: 0.45 }, TH + 0.2);
 
-  // handover — NEW floor plan with snag pins (from the animatic) + checklist
-  const hd = ctext('When it is time for [handover,]|we take care of the details.', 'h2 cream', 120, L);
-  rise(hd, TH, { lineGap: [TH, at('we take care of the details')] }); hide(hd, TJ - 0.35, 0.35);
-  const FPw = el('<div class="abs" style="left:170px;top:400px;width:640px;height:440px"></div>', L);
-  const FP = svgEl(`<rect x="10" y="10" width="620" height="420" rx="6"/><path d="M 260 10 V 200 M 10 260 H 400 V 430 M 400 260 V 330 M 520 10 V 130 H 630"/>`, { w: 640, h: 440, sw: 2 }, FPw);
-  gsap.set(FPw, { autoAlpha: 0 }); tl.set(FPw, { autoAlpha: 1 }, TH + 0.2); drawAll(FP, TH + 0.2, 0.9, 0.08);
-  [[120, 140, 'Scratch · kitchen'], [480, 330], [330, 120]].forEach(([x, y, s], i) => {
-    const pin = el(`<div class="abs" style="left:${x - 14}px;top:${y - 36}px"><svg width="28" height="36" viewBox="0 0 28 36"><path d="M14 35C14 35 2 21 2 13a12 12 0 0 1 24 0c0 8-12 22-12 22z" fill="#D6A58C"/><circle cx="14" cy="13" r="4.5" fill="#041E42"/></svg></div>`, FPw);
-    gsap.set(pin, { autoAlpha: 0 });
-    tl.fromTo(pin, { autoAlpha: 0, y: -40 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'bounce.out', immediateRender: false }, at('we take care of the details') + 0.2 + i * 0.25);
-    if (s) { const tt = el(`<div class="chip" style="left:${x + 20}px;top:${y - 60}px;padding:10px 18px;font-size:18px">${s}</div>`, FPw); gsap.set(tt, { autoAlpha: 0 }); pop(tt, at('we take care of the details') + 0.6); }
-  });
-  const ip = el('<div class="chip dark" style="left:220px;top:460px;padding:10px 22px;font-size:18px"><span class="dot"></span>In progress → Resolved</div>', FPw);
-  gsap.set(ip, { autoAlpha: 0 }); pop(ip, at('licenses') - 0.2);
-  out(FPw, TJ - 0.35);
-  const ck = el(`<div class="card" style="left:1040px;top:400px;width:640px;padding:22px 40px"></div>`, L);
-  [['Licenses', at('licenses')], ['Documentation', at('documentation')], ['Inspections', at('every step in between')], ['Keys handed over', at('in between') + 0.15]].forEach(([s, t], i) => {
-    const row = el(`<div style="display:flex;align-items:center;gap:24px;padding:19px 0;${i ? 'border-top:1px solid rgba(4,30,66,.1)' : ''}">
-      <div style="position:relative;width:44px;height:44px"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(4,30,66,.25)"></div>
-      <div class="tk" style="position:absolute;inset:0;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center">${ICON.check.replace('<svg', '<svg width="24" height="24"')}</div></div>
-      <div style="font-size:34px;font-weight:400">${s}</div></div>`, ck);
-    const tk = row.querySelector('.tk'); gsap.set(tk, { autoAlpha: 0 });
-    tl.fromTo(tk, { autoAlpha: 0, scale: 0.3 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(2.2)', immediateRender: false }, t);
-  });
-  gsap.set(ck, { autoAlpha: 0 });
-  tl.fromTo(ck, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: EASE, immediateRender: false }, at('we take care of the details'));
-  out(ck, TJ - 0.35);
-
-  // enjoy the moment
-  const E = el('<div class="layer"></div>', L); gsap.set(E, { autoAlpha: 0 });
-  const ecr = el('<div class="abs bg-cream" style="left:0;top:0;width:1920px;height:1080px"></div>', E);
-  show(E, TJ - 0.3, null, 0.55);
-  tl.fromTo(ecr, { clipPath: 'inset(0px 1920px 0px 0px)' }, { clipPath: 'inset(0px 0px 0px 0px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TJ - 0.3);
-  const EP = zlayer(60); gsap.set(EP, { autoAlpha: 0 }); portalEnjoy = EP;
-  const ep = el('<div class="abs" style="left:960px;top:0;width:960px;height:1080px"></div>', EP); vclip(ep, 'pavilion', TJ - 0.3, T1 + 0.4, { rate: 0.9, pos: '45% 50%' });
-  tl.set(EP, { autoAlpha: 1 }, TJ - 0.3);
-  tl.fromTo(EP, { clipPath: 'inset(0px 0px 0px 1920px round 0px)' }, { clipPath: 'inset(0px 0px 0px 960px round 0px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TJ - 0.3);
-  kenburns(ep, TJ - 0.3, T1 + 0.3, 1.12, 1.0);
-  const ej1 = ltext('Enjoy|the [moment.]', 'h1 navy', 140, 330, E), ej2 = ltext('[ZOOD] takes care of the rest.', 'h3 navy', 145, 600, E, 'opacity:.85');
-  rise(ej1, TJ, { lineGap: [TJ, at('the moment')] }); rise(ej2, at('while zood'));
-  [ej1, ej2].forEach(e => hide(e, T1 - 0.6, 0.35));
 }
 
 // =====================================================================
-// 03 LIVE
+// 03 LIVE — handover: the team prepares the unit (P8), final inspection (P9), the Hand Over plate, the keys (P10)
 // =====================================================================
 {
-  const T0 = at('your home'), TC = at('and everything your community'), TM = at('more presence', 2), TN = at('everything you need'),
+  const TH = at('when it is time'), TD = at('we take care of the details'), TL = at('licenses'), TDo = at('documentation'),
+    TS = at('and every step in between'), TJ = at('you simply enjoy'), T1 = at('your home');
+  chapterLabel('03', 'Live', TH + 0.4, at('and for those who invest') - 0.3);
+  const HL = zlayer(30); show(HL, TH - 0.55, T1 + 0.6, 0.01, 0.3);
+  // P8 — the team at work
+  const a8 = el('<div class="layer"></div>', HL);
+  gclip(a8, 'p8', TH - 0.55, TD + 0.6, { from: 0.2 });
+  tl.fromTo(a8, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TH - 0.55);
+  tl.fromTo(a8, { scale: 1.08 }, { scale: 1.0, duration: TD - TH + 1.4, ease: 'none', immediateRender: false }, TH - 0.55);
+  lineSweep(TH - 0.65, HL);
+  // P9 — final inspection, the checklist on her tablet
+  const a9 = el('<div class="layer"></div>', HL);
+  const chk = el(`<div style="position:absolute;inset:0;background:#FBF8F5;color:#041E42;padding:60px 70px">
+      <div class="label" style="font-size:22px;color:#A27063">Final inspection · Unit A4</div>
+      ${['Kitchen & fittings', 'Windows & glazing', 'Electrical & lighting', 'Cleaning'].map(s => `<div class="ir" style="display:flex;align-items:center;gap:26px;font-size:40px;margin-top:38px"><span class="tk" style="width:52px;height:52px;border-radius:50%;background:#A27063;display:inline-flex;align-items:center;justify-content:center">${ICON.check.replace('<svg', '<svg width="30" height="30"')}</span>${s}</div>`).join('')}
+      <div style="position:absolute;right:70px;bottom:56px;font-size:64px;font-weight:300"><span class="pc">0</span>%</div></div>`);
+  gscreen(a9, 'p9', TD - 0.1, TL + 0.6, chk, { uw: 1180, uh: 820, from: 4.45 });
+  gsap.set(a9, { autoAlpha: 0 });
+  tl.fromTo(a9, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: false }, TD - 0.1);
+  chk.querySelectorAll('.tk').forEach((k, i) => { gsap.set(k, { scale: 0 }); tl.to(k, { scale: 1, duration: 0.3, ease: 'back.out(2.4)' }, TD + 0.5 + i * 0.2); });
+  count(chk.querySelector('.pc'), 0, 100, TD + 0.5, 0.9);
+  // the Hand Over plate (client artwork, its own text removed so the labels can arrive on cue)
+  const ho = el('<div class="layer" style="background:#0a2550"></div>', HL);
+  const hp = photo(PH('handover-clean.jpg'), { w: 1920, h: 1080 }, ho);
+  gsap.set(ho, { autoAlpha: 0 });
+  tl.fromTo(ho, { autoAlpha: 1, clipPath: 'circle(0px at 1240px 700px)' }, { clipPath: 'circle(2300px at 1240px 700px)', duration: 0.9, ease: 'power3.in', immediateRender: false }, TL - 0.45);
+  tl.fromTo(hp, { scale: 1.1 }, { scale: 1.0, duration: TJ - TL + 0.6, ease: 'power1.out', immediateRender: false }, TL - 0.45);
+  const hl = (s, x, y, t) => { const e = ltext(s, 'h3 cream', x, y, ho, 'font-size:36px'); rise(e, t); return e; };
+  hl('Licenses', 258, 487, TL); hl('Documentation', 258, 823, TDo); hl('Keys handed over', 1478, 819, TS + 0.5);
+  [[1095, 418], [851, 574], [1001, 645]].forEach(([x, y], i) => {
+    const ring = el(`<div class="abs" style="left:${x - 30}px;top:${y - 30}px;width:60px;height:60px;border-radius:50%;border:2px solid #E6BFA4"></div>`, ho);
+    tl.fromTo(ring, { scale: 0.3, opacity: 1 }, { scale: 1.8, opacity: 0, duration: 1.1, repeat: 2, ease: 'power1.out', immediateRender: true }, TL - 0.1 + i * 0.3);
+  });
+  const prog = el(`<div class="abs" style="left:1326px;top:922px;width:396px;height:68px;border-radius:999px;background:rgba(10,36,74,.85);border:1px solid rgba(214,165,140,.35);padding:10px 26px 0 76px">
+      <svg viewBox="0 0 30 30" width="34" height="34" style="position:absolute;left:24px;top:16px"><rect x="3" y="3" width="24" height="24" rx="6" fill="none" stroke="#D6A58C" stroke-width="1.8"/><path d="M9 15.5l4 4 8-9" fill="none" stroke="#D6A58C" stroke-width="2" stroke-linecap="round"/></svg>
+      <div style="font-size:22px;color:#F4EEE8">Progress: <span class="n">0</span>% Complete</div>
+      <div style="margin-top:8px;height:5px;border-radius:3px;background:rgba(244,238,232,.15)"><div class="f" style="height:5px;width:0;border-radius:3px;background:linear-gradient(90deg,#B07A63,#E6BFA4)"></div></div></div>`, ho);
+  gsap.set(prog, { autoAlpha: 0 }); pop(prog, TDo + 0.2);
+  count(prog.querySelector('.n'), 0, 100, TS, 1.3); tl.to(prog.querySelector('.f'), { width: '100%', duration: 1.3, ease: 'power2.out' }, TS);
+  // headline rides over all three shots
+  const top = el('<div class="layer" style="background:linear-gradient(180deg,rgba(4,30,66,.82),rgba(4,30,66,.35) 28%,rgba(4,30,66,0) 45%)"></div>', HL);
+  gsap.set(top, { autoAlpha: 0 }); tl.to(top, { autoAlpha: 1, duration: 0.5 }, TH - 0.3); tl.to(top, { autoAlpha: 0, duration: 0.4 }, TJ - 0.4);
+  const hd = ctext('When it is time for [handover,]|we take care of the details.', 'h2 cream', 100, HL);
+  rise(hd, TH, { lineGap: [TH, TD] }); hide(hd, TJ - 0.4, 0.35);
+  // P10 — the keys
+  const a10 = el('<div class="layer"></div>', HL);
+  gclip(a10, 'p10', TJ - 0.45, T1 + 0.6, { from: 0 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.85),rgba(2,12,31,.55) 38%,rgba(2,12,31,0) 68%)"></div>', a10);
+  tl.fromTo(a10, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TJ - 0.45);
+  gsap.set(a10, { autoAlpha: 0 }); tl.set(a10, { autoAlpha: 1 }, TJ - 0.45);
+  lineSweep(TJ - 0.55, HL, { dir: -1 });
+  const ej1 = ltext('You simply enjoy|the [moment.]', 'h1 cream', 130, 330, a10);
+  const ej2 = ltext('While [ZOOD] takes care of the rest.', 'h3 cream', 135, 600, a10, 'opacity:.9');
+  rise(ej1, TJ, { lineGap: [TJ, at('the moment')] }); rise(ej2, at('while zood'));
+  [ej1, ej2].forEach(e => hide(e, T1 - 0.45, 0.3));
+}
+
+// =====================================================================
+// 03 LIVE — home, management, community, services, always with you
+// =====================================================================
+{
+  const T0 = at('your home'), TM0 = at('everything that matters'), TC = at('and everything your community'), TM = at('more presence', 2), TN = at('everything you need'),
     TA = at('as if zood'), TD = at('day and night'), T1 = at('and for those who invest');
   const L = layer('bg-day persp'); show(L, T0 - 0.45, T1 + 0.3, 0.4, 0.35);
   ambient(L, T0 - 0.45, T1 + 0.3, { color: 'rgba(162,112,99,.12)', glow: 'rgba(255,255,255,.35)', glow2: 'rgba(214,165,140,.18)', seed: 7 });
   const N = el('<div class="layer bg-navy"></div>', L);
-  const r = rng(21);
   vclip(N, 'night', at('with a real sense') - 0.2, T1 + 0.6, { rate: 0.8 });
   el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.75),rgba(2,12,31,.35) 60%,rgba(2,12,31,.5))"></div>', N);
   gsap.set(N, { autoAlpha: 0 });
   tl.to(N, { autoAlpha: 1, duration: 2.2, ease: 'sine.inOut' }, at('with a real sense'));
-  lineSweep(T0 - 0.5, L, { color: 'rgba(162,112,99,.8)' });
-  chapterTitle('Live', T0 - 0.2, { left: 160, top: 100, parent: L, color: 'navy', hold: 0.4 });
-  chapterLabel('03', 'Live', T0 + 0.3, T1 - 0.2, 'navy');
-  // the "enjoy" photo shrinks into the phone screen
   const p = hero;
-  setPoseAt(p, T0 - 0.6, { x: 1260, ry: 0 });
-  tl.set(p, { autoAlpha: 1 }, T0 - 0.6);
-  swap(p, SCR('profile.jpg'), T0 - 0.6, 'fade');
-  portalClose(portalEnjoy, T0 - 0.5, screenRect(p, 1260), 0.85, 'inset(0px 0px 0px 960px round 0px)');
-  pose(p, T0 + 0.4, { x: 1260, ry: -12, dur: 0.8, ease: 'power2.inOut' });
-  const yh = ltext('Your home.|Your property.', 'h1 navy', 160, 300, L);
-  rise(yh, T0 + 0.1, { lineGap: [T0 + 0.1, at('your property')] }); hide(yh, at('everything that matters') - 0.25, 0.3);
-  tap(p, 0.25, 0.42, T0 + 0.4);
-  const em = ltext('Everything that matters,|[protected securely]|and managed seamlessly.', 'h2 navy', 160, 230, L, 'line-height:1.3');
-  rise(em, at('everything that matters'), { lineGap: [at('everything that matters'), at('protected securely'), at('and managed seamlessly')] });
-  hide(em, TC - 0.3, 0.3);
-  // NEW — title deed + vault lock (from the animatic)
-  const deed = el(`<div class="card" style="left:160px;top:640px;width:330px;height:210px;padding:24px 28px">
-      <div class="label" style="font-size:13px;color:#A27063">Title deed</div>
-      ${[80, 92, 66].map(w => `<div style="height:8px;border-radius:4px;background:rgba(4,30,66,.12);margin-top:18px;width:${w}%"></div>`).join('')}
-      <div style="position:absolute;right:24px;bottom:22px;width:56px;height:56px;border-radius:50%;border:2px solid #A27063"></div></div>`, L);
-  gsap.set(deed, { autoAlpha: 0 }); pop(deed, at('protected securely') - 0.1);
-  const lock = svgEl(`<circle cx="70" cy="70" r="64"/><circle class="dash" cx="70" cy="70" r="50" stroke-dasharray="4 6" data-nodraw="1"/><rect x="48" y="66" width="44" height="34" rx="6"/><path class="sh" d="M 56 66 V 54 a 14 14 0 0 1 28 0 V 66"/>`, { x: 530, y: 676, w: 140, h: 140, stroke: '#A27063', sw: 2.4 }, L);
-  gsap.set(lock, { autoAlpha: 0 }); tl.set(lock, { autoAlpha: 1 }, at('protected securely')); drawAll(lock, at('protected securely'), 0.6, 0.06);
-  tl.fromTo(lock.querySelector('.sh'), { y: -10 }, { y: 0, duration: 0.3, ease: 'back.out(3)', immediateRender: false }, at('protected securely') + 0.7);
-  tl.to(lock.querySelector('.dash'), { rotation: 90, svgOrigin: '70 70', duration: 2, ease: 'none' }, at('protected securely'));
-  [deed, lock].forEach(e => out(e, TC - 0.3));
+  const FL = zlayer(32); show(FL, T0 - 0.5, TA + 0.2, 0.01, 0.01);
 
-  const CB = el('<div class="layer"></div>', L); L.insertBefore(CB, N);
-  vclip(CB, 'pergola', TC - 0.4, TN, { rate: 0.8 });
-  el('<div class="layer" style="background:rgba(244,236,228,.78)"></div>', CB);
-  gsap.set(CB, { autoAlpha: 0 });
-  tl.to(CB, { autoAlpha: 1, duration: 0.8 }, TC - 0.4); tl.to(CB, { autoAlpha: 0, duration: 0.8 }, TN - 0.5);
-  // community — NEW services pie + noticeboard (from the animatic)
-  pose(p, TC - 0.3, { x: 960, y: 590, ry: 0, s: 0.86, dur: 0.8 });
-  swap(p, SCR('community.png'), TC - 0.1);
-  const yc = ctext('Your community, in [one place.]', 'h2 navy', 40, L);
-  rise(yc, TC); hide(yc, TM - 0.25, 0.3);
-  const pie = el(`<div class="abs" style="left:180px;top:330px;width:420px;height:470px"></div>`, L);
-  const C = 2 * Math.PI * 75;
-  const PS = el(`<svg width="300" height="300" viewBox="0 0 300 300" style="position:absolute;left:60px;top:0">${[[0, 0.42, '#A27063'], [0.42, 0.72, '#C9A58C'], [0.72, 1, '#2e4a76']].map(([a, b, c]) =>
-    `<circle class="ps" cx="150" cy="150" r="75" fill="none" stroke="${c}" stroke-width="150" stroke-dasharray="0 ${C}" stroke-dashoffset="${-a * C}" data-len="${(b - a) * C}" transform="rotate(-90 150 150)"/>`).join('')}</svg>`, pie);
-  el('<div class="label navy" style="position:absolute;left:0;top:330px;width:420px;text-align:center;font-size:14px;opacity:.7">Water · Power · Shared services</div>', pie);
-  gsap.set(pie, { autoAlpha: 0 }); tl.set(pie, { autoAlpha: 1 }, TC + 0.3);
-  PS.querySelectorAll('.ps').forEach((c, i) => {
-    tl.fromTo(c, { attr: { 'stroke-dasharray': `0 ${C}` } }, { attr: { 'stroke-dasharray': `${c.dataset.len} ${C}` }, duration: 0.6, ease: 'power2.out', immediateRender: true }, TC + 0.3 + i * 0.3);
+  // "Your home. Your property." — a swipe of the hand restyles the room (client's Swiping clip)
+  const sw = el('<div class="layer"></div>', FL);
+  gclip(sw, 'swipe', T0 - 0.5, TM0 + 0.6, { from: 0.7 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.6),rgba(2,12,31,.1) 50%,rgba(2,12,31,0))"></div>', sw);
+  tl.fromTo(sw, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, T0 - 0.5);
+  const yh = ltext('Your home.|Your property.', 'h1 cream', 130, 360, sw);
+  rise(yh, T0, { lineGap: [T0, at('your property')] }); hide(yh, TM0 - 0.25, 0.3);
+  // "…protected securely and managed seamlessly." — the owner runs his home from the app (P7)
+  const dash = (big) => `<div style="position:absolute;inset:0;background:linear-gradient(170deg,#0d2f5e,#041E42);color:#F4EEE8;padding:${big ? '30px 28px' : '70px 30px'};font-family:Huwiya">
+      <div style="display:flex;align-items:center;gap:12px"><img src="${A('brand/symbol-white.png')}" style="height:${big ? 30 : 44}px"><div style="font-size:${big ? 24 : 34}px">Unit A4 · Home</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:${big ? 14 : 18}px;margin-top:${big ? 22 : 34}px">
+      ${[['Lights', 'On', 'lt'], ['Curtains', 'Closing', 'cu'], ['Climate', '22°C', ''], ['Documents', 'Secured', '']].map(([a, b, k]) => `<div class="${k}" style="border-radius:${big ? 18 : 24}px;background:rgba(255,255,255,.08);border:1px solid rgba(214,165,140,.3);padding:${big ? '18px 18px' : '26px 22px'};height:${big ? 110 : 170}px">
+        <div style="font-size:${big ? 16 : 24}px;opacity:.65">${a}</div><div style="font-size:${big ? 26 : 38}px;margin-top:8px">${b}</div></div>`).join('')}</div>
+      <div style="margin-top:${big ? 16 : 24}px;border-radius:${big ? 18 : 24}px;background:rgba(214,165,140,.18);padding:${big ? '16px 18px' : '24px 22px'};font-size:${big ? 18 : 28}px">Maintenance visit · Tue 10:00 · Confirmed</div></div>`;
+  const s7 = el('<div class="layer"></div>', FL);
+  const u7 = el(`<div style="position:absolute;inset:0">${dash(false)}</div>`);
+  gscreen(s7, 'p7', TM0 - 0.35, TC + 0.6, u7, { uw: 390, uh: 844, from: 0.15, grow: 1.06 });
+  el('<div class="layer" style="background:linear-gradient(270deg,rgba(2,12,31,.78),rgba(2,12,31,.3) 45%,rgba(2,12,31,0) 65%)"></div>', s7);
+  tl.fromTo(s7, { clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: true }, TM0 - 0.35);
+  const em = ltext('Everything that matters to you,|[protected securely]|and managed seamlessly.', 'h2 cream', 990, 120, s7, 'font-size:56px;line-height:1.25');
+  rise(em, TM0, { lineGap: [TM0, at('protected securely'), at('and managed seamlessly')] }); hide(em, TC - 0.3, 0.3);
+  const card7 = el(`<div class="abs" style="left:1240px;top:540px;width:560px;height:420px;border-radius:30px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.5)">${dash(true)}</div>`, s7);
+  gsap.set(card7, { autoAlpha: 0 }); pop(card7, at('protected securely') + 0.1); out(card7, TC - 0.3);
+  [u7, card7].forEach(u => { const lt = u.querySelector('.lt'), cu = u.querySelector('.cu');
+    tl.fromTo(lt, { background: 'rgba(255,255,255,.08)' }, { background: 'rgba(214,165,140,.55)', duration: 0.3, immediateRender: false }, at('and managed seamlessly'));
+    tl.fromTo(cu, { background: 'rgba(255,255,255,.08)' }, { background: 'rgba(214,165,140,.55)', duration: 0.3, immediateRender: false }, at('and managed seamlessly') + 0.35); });
+  // community — the evening event (P11) with the events calendar and a booking
+  const s11 = el('<div class="layer"></div>', FL);
+  gclip(s11, 'p11', TC - 0.4, TM + 0.6, { from: 0.4 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.72),rgba(2,12,31,.2) 50%,rgba(2,12,31,.35))"></div>', s11);
+  tl.fromTo(s11, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: true }, TC - 0.4);
+  lineSweep(TC - 0.5, FL);
+  const yc = ltext('And everything your community|brings together, in [one place.]', 'h2 cream', 120, 150, s11, 'font-size:62px');
+  rise(yc, TC, { lineGap: [TC, at('brings together')] }); hide(yc, TM - 0.3, 0.3);
+  const days = Array.from({ length: 35 }, (_, i) => i - 2);
+  const cal = el(`<div class="card" style="left:1250px;top:300px;width:560px;padding:28px 30px 24px;border-radius:28px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="label" style="font-size:15px;color:#A27063">Community events</span><span style="font-size:22px">October</span></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;text-align:center;font-size:18px">
+      ${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<div style="opacity:.45;font-size:14px">${d}</div>`).join('')}
+      ${days.map(d => `<div class="${[9, 16, 23].includes(d) ? 'ev' : ''}" style="height:36px;line-height:36px;border-radius:50%;${d < 1 || d > 31 ? 'opacity:0' : ''}">${d}</div>`).join('')}</div>
+      ${[['Courtyard evening · Thu 9 Oct', 'b1'], ['Family cinema night · Thu 16 Oct', ''], ['Padel tournament · Thu 23 Oct', '']].map(([s, k]) => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:21px;padding:12px 0;border-top:1px solid rgba(4,30,66,.1)"><span>${s}</span><span class="${k}" style="padding:8px 18px;border-radius:999px;background:rgba(4,30,66,.08);font-size:18px">Book</span></div>`).join('')}</div>`, s11);
+  gsap.set(cal, { autoAlpha: 0 }); pop(cal, TC + 0.3); out(cal, TM - 0.3);
+  cal.querySelectorAll('.ev').forEach((d, i) => tl.to(d, { background: '#A27063', color: '#fff', duration: 0.25 }, TC + 0.7 + i * 0.25));
+  const b1 = cal.querySelector('.b1');
+  tl.to(b1, { background: '#041E42', color: '#F4EEE8', duration: 0.2 }, at('in one place', 2) - 0.1);
+  const bk = el('<span>Booked ✓</span>', b1); gsap.set(bk, { display: 'none' });
+  tl.set(b1.firstChild, { display: 'none' }, at('in one place', 2)); tl.set(bk, { display: 'inline' }, at('in one place', 2));
+  // More ___ — a window cycles through the community
+  tl.set(sw, { autoAlpha: 0 }, TM0 + 0.6); tl.set(s7, { autoAlpha: 0 }, TC + 0.6);
+  const WF = el('<div class="abs" style="left:1000px;top:110px;width:780px;height:860px;border-radius:40px;overflow:hidden;box-shadow:0 50px 120px rgba(60,40,25,.35)"></div>', FL);
+  gsap.set(WF, { autoAlpha: 0 }); tl.set(WF, { autoAlpha: 1 }, at('more connection') - 0.15);
+  tl.fromTo(s11, { clipPath: 'inset(0% 0% 0% 0% round 0px)' }, { clipPath: 'inset(110px 140px 110px 1000px round 40px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TM - 0.4);
+  const wins = [['p14', at('more connection'), 3.6], ['p12', at('efficiency'), 0.5], ['p13', at('possibilities'), 0.2]];
+  wins.forEach(([nm, t, from], i) => {
+    const b = el('<div class="abs" style="inset:0;overflow:hidden"></div>', WF);
+    if (nm === 'p12') {
+      const bkui = el(`<div style="position:absolute;inset:0;background:#FBF8F5;color:#041E42;padding:90px 30px;font-family:Huwiya">
+        <div class="label" style="font-size:20px;color:#A27063">Facilities</div><div style="font-size:44px;margin-top:14px">Padel court 2</div>
+        <div style="font-size:28px;opacity:.65;margin-top:8px">Today · 7:00 PM</div>
+        <div style="margin-top:40px;border-radius:30px;height:300px;background:linear-gradient(160deg,#9BCBEB,#5c95c2)"></div>
+        <div class="bb" style="margin-top:44px;height:96px;border-radius:999px;background:#041E42;color:#F4EEE8;display:flex;align-items:center;justify-content:center;font-size:34px"><span class="b0">Book now</span><span class="b2" style="display:none">Booked ✓</span></div></div>`);
+      gscreen(b, 'p12', t - 0.1, wins[i + 1][1] + 0.6, bkui, { uw: 390, uh: 844, from, pw: 780, ph: 860, pos: [0.42, 0.5] });
+      const tb = t - 0.1 + (1.45 - from);
+      tl.to(bkui.querySelector('.bb'), { background: '#A27063', duration: 0.2 }, tb);
+      tl.set(bkui.querySelector('.b0'), { display: 'none' }, tb); tl.set(bkui.querySelector('.b2'), { display: 'inline' }, tb);
+    } else gclip(b, nm, t - 0.1, i < 2 ? wins[i + 1][1] + 0.6 : TN + 0.2, { from });
+    tl.fromTo(b, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: true }, t - 0.1);
+    tl.fromTo(b, { scale: 1.12 }, { scale: 1.0, duration: 2.2, ease: 'none', immediateRender: false }, t - 0.1);
   });
-  const nb = el(`<div class="card" style="left:1290px;top:330px;width:450px;padding:28px 32px">
-      <div class="label" style="font-size:14px;color:#A27063">Noticeboard</div>
-      ${['Community iftar · Sat', 'Family cinema night · Thu', 'Pool maintenance · Mon'].map(s => `<div class="nb" style="font-size:24px;padding:16px 0;border-top:1px solid rgba(4,30,66,.1);margin-top:10px">${s}</div>`).join('')}</div>`, L);
-  gsap.set(nb, { autoAlpha: 0 }); pop(nb, TC + 0.4);
-  nb.querySelectorAll('.nb').forEach((n, i) => tl.fromTo(n, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.4, ease: EASE, immediateRender: true }, TC + 0.8 + i * 0.35));
-  [pie, nb].forEach(e => out(e, TM - 0.3));
-  // More ___ reprise
-  const mo = text('[More]', 'h1', 'left:80px;width:640px;top:470px;text-align:right', L);
+  tl.set(s11, { autoAlpha: 0 }, at('more connection') + 0.6);
+  const mo = ltext('[More]', 'h0', 140, 330, L);
   rise(mo, TM); hide(mo, TN - 0.3, 0.35);
-  swapWords([['presence.', at('presence', 2)], ['connection.', at('more connection') + 0.15], ['efficiency.', at('efficiency')], ['possibilities.', at('possibilities')]], L,
-    (s) => ltext(s, 'h1 navy', 1220, 470, L, 'font-size:88px'), { useRise: true }).forEach((e, i, a) => { if (i === a.length - 1) hide(e, TN - 0.3, 0.35); });
-  tap(p, 0.82, 0.29, at('more connection'));
+  swapWords([['presence.', at('presence', 2)], ['connection.', at('more connection') + 0.15], ['efficiency.', at('efficiency')], ['possibilities|for the community.', at('possibilities')]], L,
+    (s) => ltext(s, 'h1 navy', 140, 540, L), { useRise: true }).forEach((e, i, a) => { if (i === a.length - 1) hide(e, TN - 0.3, 0.35); });
+  tl.to(WF, { autoAlpha: 0, duration: 0.4 }, TN + 0.1);
 
-  // services
-  pose(p, TN - 0.35, { x: 1120, y: 540, ry: -10, s: 1, dur: 0.8 });
-  ['Cleaning', 'Delivery', 'Meeting room', 'Facilities', 'Maintenance', 'Concierge'].forEach((s, i) => {
-    const c = chip(`<span class="dot"></span>${s}`, 1420 + (i % 2) * 90, 230 + i * 110, L);
-    pop(c, TN + 0.05 + i * 0.2, { x: -70, scale: 0.9 }); out(c, TA - 0.3);
+  // "Everything you need, whenever you need it." — services on request (P15) with the concierge bell
+  const SV = zlayer(60); show(SV, TN - 0.4, null, 0.01);
+  const s15 = el('<div class="layer"></div>', SV);
+  gclip(s15, 'p15', TN - 0.4, TA + 0.6, { from: 0.15 });
+  el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.72),rgba(2,12,31,.2) 50%,rgba(2,12,31,0))"></div>', s15);
+  tl.fromTo(SV, { clipPath: 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TN - 0.4);
+  const en = ltext('Everything you need,|[whenever you need it.]', 'h2 cream', 120, 150, SV);
+  rise(en, TN, { lineGap: [TN, at('whenever')] }); hide(en, TA - 0.6, 0.3);
+  const req = el(`<div class="card" style="left:120px;top:640px;width:560px;padding:24px 28px;border-radius:26px"><div class="label" style="font-size:14px;color:#A27063">Service requests</div></div>`, SV);
+  const sub = (TN - 0.4) - 0.15;
+  [['Concierge · Package delivered', 0.15], ['Housekeeping · Scheduled', 1.3], ['Maintenance · On the way', 2.62]].forEach(([s, c], i) => {
+    const r = el(`<div style="display:flex;align-items:center;gap:16px;font-size:24px;padding:12px 0;border-top:1px solid rgba(4,30,66,.1);margin-top:${i ? 0 : 10}px"><span class="tick" style="width:30px;height:30px">${ICON.check}</span>${s}</div>`, req);
+    tl.fromTo(r, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.35, ease: EASE, immediateRender: true }, Math.max(TN - 0.1, sub + c));
   });
-  const en = ltext('Everything|you need,|[whenever you]|[need it.]', 'h2 navy', 140, 300, L);
-  rise(en, TN, { lineGap: [TN, TN + 0.35, at('whenever'), at('whenever') + 0.35] }); hide(en, TA - 0.3, 0.3);
+  gsap.set(req, { autoAlpha: 0 }); pop(req, TN - 0.1);
+  const bellBox = el('<div class="abs" style="left:520px;top:440px;width:1280px;height:720px;transform:scale(.3);transform-origin:0 0"></div>', SV);
+  gclip(bellBox, 'bell', TN, TA + 0.6, { fit: 'fill' });
+  gsap.set(bellBox, { autoAlpha: 0 }); tl.fromTo(bellBox, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: EASE, immediateRender: false }, TN + 0.2);
+  // the services scene closes into the phone: "As if ZOOD is always with you"
+  tl.set(p, { autoAlpha: 1 }, TA - 1.3);
+  setPoseAt(p, TA - 1.3, { x: 1000, ry: 0 });
+  swap(p, SCR('community.png'), TA - 1.3, 'fade');
+  out(req, TA - 0.85, 0.3); out(bellBox, TA - 0.85, 0.3);
+  portalClose(SV, TA - 0.75, screenRect(p, 1000), 0.85);
+  pose(p, TA + 0.2, { x: 1000, ry: -10, dur: 0.8 });
 
-  // always with you · chat
-  pose(p, TA - 0.35, { x: 1000, ry: -10, dur: 0.8 });
   const aw = ltext('As if [ZOOD] is|always with you.', 'h2 navy', 160, 380, L);
   rise(aw, TA, { lineGap: [TA, at('always with you')] });
   tl.to(aw, { color: '#F4EEE8', duration: 1.6 }, at('with a real sense'));
   hide(aw, TD - 0.35, 0.35);
-  const b1 = el('<div class="chip dark" style="left:auto;right:90px;top:330px;border-radius:30px 30px 8px 30px;font-weight:400">Can I book the gym at 7 PM?</div>', L);
-  const b2 = el(`<div class="chip" style="left:auto;right:120px;top:440px;border-radius:30px 30px 30px 8px;font-weight:400"><img src="${A('brand/symbol-navy.png')}" style="height:28px">Booked. See you at 7 PM.</div>`, L);
-  [b1, b2].forEach(b => gsap.set(b, { autoAlpha: 0 }));
-  pop(b1, TA + 0.3, { y: 30, scale: 0.85 }); pop(b2, at('always with you') + 0.5, { y: 30, scale: 0.85 });
-  [b1, b2].forEach(b => out(b, T1 - 0.35));
+  const c1 = el('<div class="chip dark" style="left:auto;right:90px;top:330px;border-radius:30px 30px 8px 30px;font-weight:400">Can I book the gym at 7 PM?</div>', L);
+  const c2 = el(`<div class="chip" style="left:auto;right:120px;top:440px;border-radius:30px 30px 30px 8px;font-weight:400"><img src="${A('brand/symbol-navy.png')}" style="height:28px">Booked. See you at 7 PM.</div>`, L);
+  [c1, c2].forEach(b => gsap.set(b, { autoAlpha: 0 }));
+  pop(c1, TA + 0.3, { y: 30, scale: 0.85 }); pop(c2, at('always with you') + 0.5, { y: 30, scale: 0.85 });
+  [c1, c2].forEach(b => out(b, T1 - 0.35));
   const dn = ltext('Day', 'h0', 160, 380, L, 'color:#F4EEE8');
   const dn2 = ltext('[and night.]', 'h0', 160, 560, L);
   rise(dn, TD - 0.1, { stagger: 0 }); rise(dn2, at('and night'));
@@ -797,8 +904,7 @@ let hero, portalHome, portalEnjoy;
   tl.fromTo(IB, { scale: 1.15 }, { scale: 1.0, duration: TS - T0 + 1, ease: 'none', immediateRender: false }, T0 - 0.4);
   tl.to(IB, { autoAlpha: 0, duration: 0.8 }, TS - 0.2);
   lineSweep(T0 - 0.45, L, { dir: -1 });
-  chapterTitle('Invest', T0 - 0.15, { left: 160, top: 120, parent: L, hold: 0.45 });
-  chapterLabel('04', 'Invest', T0 + 0.4, TX - 0.5);
+  chapterLabel('04', 'Enjoy', T0 + 0.4, TX - 0.5);
   const fi = ltext('For those who invest|in what we build,|[there is something more.]', 'h2 cream', 160, 330, L);
   rise(fi, T0 + 0.35, { lineGap: [T0 + 0.35, at('in what we build'), at('there is something more')] }); hide(fi, TS - 0.3, 0.35);
   // NEW — flowing lines rise into a curve (from the animatic)
@@ -819,8 +925,8 @@ let hero, portalHome, portalEnjoy;
   const chart = ov(p, '', [0.13, 0.33, 0.82, 0.175], 'background:#f4efea');
   tl.set(chart, { clipPath: 'inset(0% 0% 0% 0%)' }, TS - 0.3);
   tl.to(chart, { clipPath: 'inset(0% 0% 0% 100%)', duration: 1.4, ease: 'power1.inOut' }, TS + 0.3);
-  const mk = ltext('Make your property|[work for you.]', 'h2 cream', 1120, 260, L);
-  rise(mk, TS, { lineGap: [TS, at('work for you')] });
+  const mk = ltext('A smarter way to make|your property [work for you.]', 'h2 cream', 1120, 230, L, 'font-size:62px');
+  rise(mk, TS, { lineGap: [TS, at('your property work for you')] });
   const tg = el(`<div class="abs" style="left:1120px;top:560px;width:690px;height:96px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(214,165,140,.35)">
       <div class="knob" style="position:absolute;top:8px;left:8px;width:220px;height:78px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4 55%,#B5816A);box-shadow:0 10px 30px rgba(162,112,99,.45)"></div>
       ${['Long-term', 'Short stays', 'Sale'].map((s, i) => `<div class="opt" style="position:absolute;top:0;left:${8 + i * 225}px;width:220px;height:96px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:500">${s}</div>`).join('')}</div>`, L);
@@ -858,6 +964,8 @@ const END = Math.ceil(after('live zood') + 6.5);
 {
   const TX = at('discover', 2), TDz = at('designed for the rhythm'), TB = at('because after construction'), TE = after('responsibility begins');
   const L = zlayer(40, 'bg-navy'); show(L, TX - 0.5, null, 0.45);
+  { const wv = el('<div class="layer" style="overflow:hidden"></div>', L); const sv = brandWeave(wv, { color: 'rgba(214,165,140,.08)' });
+    tl.fromTo(sv, { y: 0 }, { y: -160, duration: END - TX + 0.5, ease: 'none', immediateRender: false }, TX - 0.5); }
   const wallWrap = el('<div class="layer persp" style="perspective:2200px"></div>', L);
   const wall = el('<div class="abs p3d" style="left:-520px;top:-260px;width:2960px;height:1600px"></div>', wallWrap);
   gsap.set(wall, { rotationX: 30, rotationZ: -14 });
@@ -870,7 +978,7 @@ const END = Math.ceil(after('live zood') + 6.5);
   tl.fromTo(wall, { x: 0, rotationZ: -14 }, { x: -480, rotationZ: -10, duration: TDz - TX + 1.2, ease: 'none', immediateRender: false }, TX - 0.5);
   const wshade = el('<div class="layer" style="background:radial-gradient(60% 45% at 50% 50%, rgba(2,12,31,.9) 0%, rgba(2,12,31,.55) 60%, rgba(2,12,31,.2) 100%)"></div>', L);
   gsap.set(wshade, { autoAlpha: 0 }); tl.to(wshade, { autoAlpha: 1, duration: 0.4 }, TX - 0.2);
-  swapWords([['Discover.', TX], ['Own.', at('enjoy', 3)], ['Live.', at('live', 4)], ['[Invest.]', at('dwell')]], L, (s) => ctext(s, 'h0 cream', 440, L), { useRise: true })
+  swapWords([['Discover.', TX], ['Enjoy.', at('enjoy', 3)], ['Live.', at('live', 4)], ['[Dwell.]', at('dwell')]], L, (s) => ctext(s, 'h0 cream', 440, L), { useRise: true })
     .forEach((e, i, a) => { if (i === a.length - 1) hide(e, TDz - 0.3, 0.3); });
   tl.to([wallWrap, wshade], { autoAlpha: 0, duration: 0.5 }, TDz - 0.3);
 
@@ -884,12 +992,13 @@ const END = Math.ceil(after('live zood') + 6.5);
   const t68 = T(48, 526, 300, 506, `<div style="position:absolute;left:30px;top:34px" class="label navy">Construction</div><div class="navy" style="position:absolute;left:24px;bottom:70px;font-size:120px;font-weight:300"><span class="n">0</span>%</div><div class="navy" style="position:absolute;left:30px;bottom:36px;font-size:22px;opacity:.6">Tracked live</div>`, 'linear-gradient(160deg,#EFE4DA,#DBC8B6)');
   T(366, 48, 300, 300, `<div style="position:absolute;inset:0;background:url('${PH('city-view.jpg')}') center 35%/cover"></div>${shadeB}${lab('Discover')}`);
   T(366, 366, 300, 666, scrTile('walkthrough.png'), '#F4EEE8');
-  T(684, 48, 552, 300, `<div style="position:absolute;inset:0;background:url('${PH('reception.jpg')}') center/cover"></div>${shadeB}${lab('Own')}`);
+  T(684, 48, 552, 300, `<div style="position:absolute;inset:0;background:url('${PH('reception.jpg')}') center/cover"></div>${shadeB}${lab('Create')}`);
   const txt = T(684, 366, 552, 348, '', 'linear-gradient(160deg,#0f3364,#041E42)');
   txt.style.boxShadow = 'inset 0 0 0 1.5px rgba(214,165,140,.35)';
-  T(684, 732, 552, 300, `<img src="${SCR('yield.png')}" style="position:absolute;left:-2%;top:-${0.115 * 552 / 0.46 * 1.04}px;width:104%">${lab('Invest', true)}`, '#F4EEE8');
+  T(684, 732, 552, 300, `<img src="${SCR('yield.png')}" style="position:absolute;left:-2%;top:-${0.115 * 552 / 0.46 * 1.04}px;width:104%">${lab('Enjoy', true)}`, '#F4EEE8');
   T(1254, 48, 300, 666, scrTile('esign.png'), '#F4EEE8');
-  T(1254, 732, 300, 300, `<img src="${A('brand/symbol-navy.png')}" style="position:absolute;left:50%;top:50%;width:150px;transform:translate(-50%,-50%)">`, '#F4EEE8');
+  const tStar = T(1254, 732, 300, 300, '', 'radial-gradient(90% 90% at 50% 40%,#FBF7F3,#E9DDD2)');
+  { const sb = el('<div class="abs" style="left:-170px;top:-58px;width:1280px;height:720px;transform:scale(.5);transform-origin:0 0"></div>', tStar); gclip(sb, 'star', TDz - 0.4, END, { fit: 'fill' }); }
   const t78 = T(1572, 48, 300, 300, `<div style="position:absolute;left:30px;top:34px" class="label navy">Average yield</div><div class="navy" style="position:absolute;left:24px;bottom:30px;font-size:104px;font-weight:300"><span class="n">0.0</span>%</div>`, 'linear-gradient(160deg,#C4E1F4,#9BCBEB)');
   T(1572, 366, 300, 666, scrTile('map.jpg'), '#F4EEE8');
   tiles.forEach((t) => {
@@ -903,7 +1012,7 @@ const END = Math.ceil(after('live zood') + 6.5);
   tl.fromTo(B, { scale: 1 }, { scale: 1.035, duration: TE - TDz + 0.5, ease: 'none', immediateRender: false }, TDz);
   const d1 = text('Designed for the rhythm|of modern life.', 'h3 cream', 'left:0;width:552px;top:110px;text-align:center', txt);
   rise(d1, TDz + 0.1, { lineGap: [TDz + 0.1, at('of modern life')] }); hide(d1, TB - 0.25, 0.3);
-  const d2 = text('After construction,|[responsibility begins.]', 'h3 cream', 'left:0;width:552px;top:110px;text-align:center', txt);
+  const d2 = text('Because after construction,|[responsibility begins.]', 'h3 cream', 'left:0;width:552px;top:116px;text-align:center;font-size:40px', txt);
   rise(d2, TB, { lineGap: [TB, at('responsibility begins')] });
   // collapse: outer tiles fly into the centre while "begins" is spoken, text tile becomes the app icon
   const TCOL = at('begins') - 0.1;
