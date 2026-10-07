@@ -20,6 +20,8 @@ window.__ready = (async () => {
   await document.fonts.ready;
   await Promise.all(['300', '400', '500', '600'].map(w => document.fonts.load(`${w} 100px Huwiya`)));
   for (const fn of (typeof AFTER_FONTS !== 'undefined' ? AFTER_FONTS : [])) fn();
+  await Promise.all(window.READY_WAIT || []);                       // live app screens (Video A)
+  for (const fn of (window.UI_ANIM || [])) fn();
   const urls = new Set([...document.querySelectorAll('img')].map(i => i.src).filter(u => !u.startsWith('data:')));
   document.querySelectorAll('*').forEach(e => { const m = e.style && e.style.backgroundImage.match(/url\("?([^")]+)"?\)/); if (m) urls.add(m[1]); });
   await Promise.all([...urls].map(u => { const i = new Image(); i.src = u; return i.decode().catch(() => console.warn('img fail', u)); }));

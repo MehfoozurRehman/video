@@ -150,3 +150,92 @@ function updateClips(t) {
   }
   return Promise.all(jobs);
 }
+
+// ---------- live app screens (the 31 ZOOD screens, 390×844 HTML pages in assets/ui) ----------
+// A screen source is either an image path or 'ui:NN'. Live screens are iframes scaled into the phone,
+// so text stays sharp and their parts can be animated on the film timeline once loaded (onUI).
+window.READY_WAIT = window.READY_WAIT || [];
+window.UI_ANIM = window.UI_ANIM || [];
+const UIW = 390, UIH = 844;
+function scrContent(src, sw, sh) {
+  if (!src.startsWith('ui:')) return el(`<div class="scrw"><img src="${src}"></div>`);
+  const id = src.slice(3);
+  const s = Math.max(sw / UIW, sh / UIH);
+  const w = el(`<div class="scrw" style="background:#F4EEE8"></div>`);
+  const f = el(`<iframe src="assets/ui/${id}.html" scrolling="no" style="position:absolute;left:${(sw - UIW * s) / 2}px;top:${(sh - UIH * s) / 2}px;width:${UIW}px;height:${UIH}px;border:0;transform:scale(${s});transform-origin:0 0;pointer-events:none"></iframe>`, w);
+  window.READY_WAIT.push(new Promise(res => f.addEventListener('load', async () => {
+    try { await f.contentDocument.fonts.ready; await Promise.all([...f.contentDocument.images].map(i => i.decode().catch(() => {}))); } catch (e) {}
+    res();
+  }, { once: true })));
+  w.ifr = f;
+  return w;
+}
+// Run fn(doc, q) after the screen's page has loaded: q(sel) → first match, q.all(sel) → all matches.
+function onUI(w, fn) {
+  window.UI_ANIM.push(() => {
+    const d = w.ifr.contentDocument;
+    const q = (s) => d.querySelector(s); q.all = (s) => [...d.querySelectorAll(s)];
+    fn(d, q);
+  });
+}
+// Element whose own text matches exactly (for counting up numbers inside a screen).
+function uiText(d, txt) {
+  return [...d.querySelectorAll('body *')].find(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim() === txt));
+}
+function uiCount(d, txt, t, dur = 1.2, from = 0) {
+  const e = uiText(d, txt); if (!e) throw new Error('ui text not found: ' + txt);
+  const n = [...e.childNodes].find(c => c.nodeType === 3 && c.textContent.trim() === txt);
+  const target = parseFloat(txt.replace(/[^0-9.]/g, '')), dec = (txt.split('.')[1] || '').replace(/[^0-9]/g, '').length;
+  const fmt = (v) => txt.replace(/[0-9][0-9,]*(\.[0-9]+)?/, dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-US'));
+  const o = { v: from };
+  tl.fromTo(o, { v: from }, { v: target, duration: dur, ease: 'power2.out', immediateRender: true, onUpdate: () => { n.textContent = fmt(o.v); } }, t);
+}
+// Staggered rise-in of items inside a screen.
+function uiRise(els, t, { stagger = 0.08, y = 24, dur = 0.5 } = {}) {
+  els.forEach((e, i) => tl.fromTo(e, { opacity: 0, y }, { opacity: 1, y: 0, duration: dur, ease: 'power3.out', immediateRender: true }, t + i * stagger));
+}
+function phone(src, { w = 420, x = 960, y = 540, parent = stage } = {}) {
+  const f = Math.round(w * 0.013), b = Math.round(w * 0.03);
+  const sw = w - 2 * (f + b), sh = Math.round(sw / SCREEN_ASPECT);
+  const h = sh + 2 * (f + b);
+  const R = w * 0.17;
+  const p = el(`<div class="phone" style="width:${w}px;height:${h}px;left:${x - w / 2}px;top:${y - h / 2}px"></div>`, parent);
+  for (let i = 1; i <= 9; i++) el(`<div class="ph-edge" style="border-radius:${R}px;transform:translateZ(${-i * 1.4}px)"></div>`, p);
+  const body = el(`<div class="ph-body" style="border-radius:${R}px"></div>`, p);
+  const bez = el(`<div class="ph-bezel" style="left:${f}px;top:${f}px;right:${f}px;bottom:${f}px;border-radius:${R - f}px"></div>`, body);
+  const scr = el(`<div class="ph-screen" style="left:${b}px;top:${b}px;width:${sw}px;height:${sh}px;border-radius:${R - f - b}px"></div>`, bez);
+  el(`<div class="ph-island" style="top:${sh * 0.012 + b}px;width:${sw * 0.3}px;height:${sw * 0.085}px"></div>`, bez);
+  el(`<div class="ph-glare"></div>`, scr);
+  const sheen = el(`<div class="ph-sheen" style="left:-60%"></div>`, scr);
+  el(`<div class="ph-btn" style="left:-4px;top:${h * .2}px;width:5px;height:${h * .05}px"></div>`, p);
+  el(`<div class="ph-btn" style="left:-4px;top:${h * .29}px;width:5px;height:${h * .085}px"></div>`, p);
+  el(`<div class="ph-btn" style="left:-4px;top:${h * .395}px;width:5px;height:${h * .085}px"></div>`, p);
+  el(`<div class="ph-btn" style="right:-4px;top:${h * .32}px;width:5px;height:${h * .12}px"></div>`, p);
+  const cur = scrContent(src, sw, sh);
+  scr.insertBefore(cur, scr.firstChild);
+  Object.assign(p, { scr, sheen, cur, sw, sh, pw: w, phh: h });
+  return p;
+}
+function swap(p, src, t, mode = 'push') {
+  const img = scrContent(src, p.sw, p.sh);
+  p.scr.insertBefore(img, p.scr.querySelector('.ph-glare'));
+  const old = p.cur;
+  if (mode === 'push') {
+    tl.fromTo(img, { xPercent: 100 }, { xPercent: 0, duration: 0.75, ease: 'power3.inOut', immediateRender: true }, t);
+    tl.fromTo(old, { xPercent: 0, filter: 'brightness(1)' }, { xPercent: -30, filter: 'brightness(.6)', duration: 0.75, ease: 'power3.inOut', immediateRender: false }, t);
+  } else {
+    tl.fromTo(img, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'none', immediateRender: true }, t);
+  }
+  p.cur = img;
+  return img;
+}
+// Text that changes at given times: pairs [[t, text], ...] (deterministic under seeking).
+function uiTextAt(e, pairs, tEnd) {
+  const node = [...e.childNodes].find(c => c.nodeType === 3 && c.textContent.trim()) || e.firstChild;
+  const t0 = pairs[0][0];
+  tl.fromTo({}, { p: 0 }, { p: 1, duration: tEnd - t0, ease: 'none', immediateRender: false, onUpdate: () => {
+    const now = tl.time(); let txt = pairs[0][1];
+    for (const [t, s] of pairs) if (now >= t) txt = s;
+    node.textContent = txt;
+  } }, t0);
+}
