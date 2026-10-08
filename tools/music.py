@@ -29,6 +29,12 @@ def at(phrase, k=1):
     raise KeyError(phrase)
 
 
+def after(phrase):  # end of the phrase's last word
+    p = phrase.lower().split()
+    i = next(i for i in range(len(words)) if words[i:i + len(p)] == p)
+    return VO[i + len(p) - 1][2]
+
+
 # ---------------------------------------------------------------- cue map
 T = dict(more=at('more presence'), cream=at('because true luxury'), trad=at('traditionally'), comm=at('we build communities'),
          today=at('and today'), app=at('this is the zood app'), drop=at('explore every'), hand=at('when it is time'),
@@ -163,7 +169,7 @@ beats = np.arange(OFF, DUR, BEAT / 2)  # 8th-note grid
 
 def level(time):  # 0 = no drums, 1 = soft pulse, 2 = groove, 3 = full
     s = [(0, 0), (T['more'] - 0.1, 1), (T['trad'] - 0.2, 0.5), (T['comm'] - 0.2, 1), (T['today'] + 2, 2), (T['app'] - 0.05, 0),
-         (T['drop'] - 0.01, 3), (T['hand'] - 0.3, 0.5), (T['home'] - 0.2, 3), (T['night'], 2), (T['inv'] - 0.1, 3),
+         (T['drop'] - 0.01, 3), (T['hand'] - 0.3, 0.5), (T['home'] - 0.2, 3), (T['inv'] - 0.1, 3),  # steady through "always with you… day and night"
          (T['w1'] - 0.05, 0), (T['rhythm'] - 0.1, 2), (T['lux'] - 0.05, 0)]
     v = 0
     for a, b in s:
@@ -203,6 +209,7 @@ for tgt, g in [(T['app'], 0.6), (T['drop'], 0.45), (T['w1'], 0.55), (T['w2'], 0.
     place(fx, boom(g), tgt)
     place(fx, pluck(note_hz(74), dur=3, amp=0.18), tgt, pan=0.2)
 for tw in [T['cream'] - 0.35, T['trad'] - 0.15, T['drop'] - 0.6, at('verify your identity') - 0.3, T['hand'] - 0.6, T['enjoy'] - 0.5,
+           at('before the first') + 0.1, after('not just an empty room') + 0.05,
            at('and everything your community') - 0.5, at('everything you need') - 0.4, T['inv'] - 0.45, T['rhythm'] - 0.35]:
     place(fx, whoosh(0.16), tw - 0.45, pan=rng.uniform(-0.4, 0.4))
 

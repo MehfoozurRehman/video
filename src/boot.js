@@ -19,12 +19,16 @@ window.__seek = (t) => {
 window.__ready = (async () => {
   await document.fonts.ready;
   await Promise.all(['300', '400', '500', '600'].map(w => document.fonts.load(`${w} 100px Huwiya`)));
+  await Promise.all(['400', '500', '600', '700'].map(w => document.fonts.load(`${w} 100px Figtree`)));
   for (const fn of (typeof AFTER_FONTS !== 'undefined' ? AFTER_FONTS : [])) fn();
   await Promise.all(window.READY_WAIT || []);                       // live app screens (Video A)
   for (const fn of (window.UI_ANIM || [])) fn();
   const urls = new Set([...document.querySelectorAll('img')].map(i => i.src).filter(u => !u.startsWith('data:')));
   document.querySelectorAll('*').forEach(e => { const m = e.style && e.style.backgroundImage.match(/url\("?([^")]+)"?\)/); if (m) urls.add(m[1]); });
-  await Promise.all([...urls].map(u => { const i = new Image(); i.src = u; return i.decode().catch(() => console.warn('img fail', u)); }));
+  const dec = (u) => { const i = new Image(); i.src = u; return i.decode(); };
+  const list = [...urls];
+  for (let k = 0; k < list.length; k += 4)                           // a few at a time: many parallel decodes of large photos fail
+    await Promise.all(list.slice(k, k + 4).map(u => dec(u).catch(() => new Promise(r => setTimeout(r, 300)).then(() => dec(u))).catch(() => dec(u)).catch(() => console.warn('img fail', u))));
   await Promise.all([...document.querySelectorAll('img')].map(i => i.decode().catch(() => {})));
   window.__seek(0);
   return true;

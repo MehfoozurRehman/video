@@ -233,9 +233,34 @@ function swap(p, src, t, mode = 'push') {
 function uiTextAt(e, pairs, tEnd) {
   const node = [...e.childNodes].find(c => c.nodeType === 3 && c.textContent.trim()) || e.firstChild;
   const t0 = pairs[0][0];
-  tl.fromTo({}, { p: 0 }, { p: 1, duration: tEnd - t0, ease: 'none', immediateRender: false, onUpdate: () => {
+  tl.fromTo({ p: 0 }, { p: 0 }, { p: 1, duration: tEnd - t0, ease: 'none', immediateRender: false, onUpdate: () => {
     const now = tl.time(); let txt = pairs[0][1];
     for (const [t, s] of pairs) if (now >= t) txt = s;
     node.textContent = txt;
   } }, t0);
+}
+
+// ---------- furniture packages (data from the app's Furniture Packages screens) ----------
+const SARi = (s, c = 'currentColor') => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 2.5v15.2L4.5 15"/><path d="M15 2.5v18.5"/><path d="M2.8 10.2 21.2 6.4"/><path d="M2.8 15.4 21.2 11.6"/><path d="M16.5 21.2 21.2 17.3"/></svg>`;
+const PKG = [
+  { name: 'Classic', img: 'classic', desc: 'Carved mahogany, damask and brass, with a canopy bed and crystal chandelier.', price: 78000, pieces: '12 pieces' },
+  { name: 'Contemporary', img: 'contemporary', desc: 'Oak slats, linen and warm concrete, with soft curved seating and warm lighting.', price: 108500, pieces: '12 pieces' },
+  { name: 'Luxury', img: 'luxury', desc: 'Emerald velvet, walnut panelling and polished brass, with a crowned canopy.', price: 164000, pieces: '15 pieces' },
+];
+const money = (v) => Math.round(v).toLocaleString('en-US');
+const ICO = {
+  back: '<svg class="i" width="28" height="28" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  cube: '<svg class="i" width="28" height="28" viewBox="0 0 24 24"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M12 12 20 7.5M12 12v9M12 12 4 7.5"/></svg>',
+  tag: '<svg class="i" width="27" height="27" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>',
+  arrow: '<svg class="i" width="26" height="26" viewBox="0 0 24 24" style="stroke-width:2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  check: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+};
+// Text that switches at given times, deterministic under seeking: pairs [[t, html], ...]
+function htmlAt(e, pairs, tEnd) {
+  tl.fromTo({ p: 0 }, { p: 0 }, { p: 1, duration: tEnd - pairs[0][0], ease: 'none', immediateRender: false, onUpdate: () => {
+    const now = tl.time(); let h = pairs[0][1];
+    for (const [t, s] of pairs) if (now >= t) h = s;
+    if (e.innerHTML !== h) e.innerHTML = h;
+  } }, pairs[0][0]);
+  e.innerHTML = pairs[0][1];
 }

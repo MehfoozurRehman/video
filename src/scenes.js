@@ -62,6 +62,8 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   const TB = at('but luxury'), TM = at('more presence'), T0 = at('because true luxury'), TA = at('it is about having'), TH = at('and that is exactly'),
     TW = at('that is why'), TX = at('it is an experience'), T1 = at('traditionally');
   const tLv = at('living'), tPz = at('personalization'), tCf = at('comfort'), tTm = at('time for what');
+  // each line leaves as its last word ends; the frame moves in the short gap, before the next line rises
+  const ePr = after('more presence'), eLv = after('more living'), ePz = after('more personalization') - 0.08, eCf = after('more comfort');
 
   // --- sunrise opening
   const L = layer('bg-navy'); show(L, 0, null, 0.01);
@@ -93,11 +95,11 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
     ['[More] time for what truly matters.', tTm, 'h2 cream', `left:0;width:${W}px;top:110px;text-align:center`],
   ].map(([s, t, cls, st], i, arr) => {
     const e = text(s, cls, st, Ls); rise(e, t, { stagger: 0.05, dur: 0.6 });
-    if (i < arr.length - 1 && i !== 3) hide(e, arr[i + 1][1] - 0.15, 0.3);
+    if (i < 3) hide(e, [ePr, eLv, ePz][i], 0.2);
     return e;
   });
   const cf2 = ltext('comfort.', 'h1 cream', 1330, 470, Ls); rise(cf2, tCf + 0.08);
-  hide(moreTxt[3], tTm - 0.15, 0.3); hide(cf2, tTm - 0.15, 0.3); hide(moreTxt[4], T0 - 0.3, 0.3);
+  hide(moreTxt[3], eCf, 0.2); hide(cf2, eCf, 0.2); hide(moreTxt[4], T0 - 0.3, 0.3);
 
   // --- cream world (slides up with the kinked brand edge)
   const C2 = el('<div class="layer bg-cream"></div>', stage);
@@ -176,11 +178,11 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   const R = (a, b, c, d) => ({ borderTopLeftRadius: a, borderTopRightRadius: b, borderBottomRightRadius: c, borderBottomLeftRadius: d });
   const mv = (t, props, dur = 0.75) => tl.to(fr, { ...props, duration: dur, ease: 'power3.inOut' }, t);
   gsap.set(fr, { rotationY: -8, transformPerspective: 2000 });
-  mv(tLv - 0.2, { left: 160, top: 110, width: 680, height: 860, rotationY: 8 });                                   // living: frame glides left
-  mv(tPz - 0.55, { left: 0, top: 0, width: 1920, height: 1080, rotationY: 0, ...R(0, 0, 0, 0) });                   // personalization: full screen
-  tl.to(shade, { autoAlpha: 1, duration: 0.5 }, tPz - 0.1); tl.to(shade, { autoAlpha: 0, duration: 0.4 }, tCf - 0.2);
-  mv(tCf - 0.2, { left: 660, top: 90, width: 600, height: 900, ...R(300, 300, 32, 32) });                             // comfort: centred arch
-  mv(tTm - 0.2, { left: 0, top: 250, width: 1920, height: 600, ...R(0, 0, 0, 0) });                                   // time: cinematic band
+  mv(ePr + 0.03, { left: 160, top: 110, width: 680, height: 860, rotationY: 8 }, 0.55);                                   // living: frame glides left
+  mv(eLv + 0.07, { left: 0, top: 0, width: 1920, height: 1080, rotationY: 0, ...R(0, 0, 0, 0) }, 0.6);                   // personalization: full screen
+  tl.to(shade, { autoAlpha: 1, duration: 0.5 }, tPz - 0.1); tl.to(shade, { autoAlpha: 0, duration: 0.4 }, ePz);
+  mv(ePz, { left: 660, top: 90, width: 600, height: 900, ...R(300, 300, 32, 32) }, 0.6);                             // comfort: centred arch
+  mv(eCf + 0.06, { left: 0, top: 250, width: 1920, height: 600, ...R(0, 0, 0, 0) }, 0.55);                                   // time: cinematic band
   mv(T0 - 0.35, { left: 1120, top: 120, width: 620, height: 840, ...R(310, 310, 32, 32), boxShadow: '0 40px 90px rgba(80,50,30,.25)' }, 0.9); // arch on cream
   mv(TA - 0.1, { left: 760, top: 330, width: 400, height: 680, ...R(200, 200, 24, 24) }, 0.8);                       // centre of the triptych
   mv(TH - 0.3, { left: 1120, top: 120, width: 620, height: 840, ...R(310, 310, 32, 32) }, 0.8);                      // "happiness"
@@ -364,6 +366,12 @@ let hero, portalHome, portalEnjoy;
   const TZ = at('this is the zood app');
   const L = zlayer(50, 'persp'); show(L, TZ + 0.7, at('discover', 2) + 0.9, 0.3, 0.3);
   hero = phone('ui:01', { parent: L });
+  onUI(hero.cur, (d, q) => {
+    const im = q.all('img');
+    tl.fromTo(im[0], { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.8, ease: EASE, immediateRender: true }, TZ + 0.9);
+    uiRise([q('p')], TZ + 1.25, { y: 16, dur: 0.7 });
+    tl.fromTo(im[1], { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.1, ease: 'power2.out', immediateRender: true }, TZ + 1.0);
+  });
   { const t0 = TZ + 0.7, n = Math.floor((at('discover', 2) - t0) / 2.4);
     tl.fromTo(L, { y: -9, rotation: -0.4 }, { y: 9, rotation: 0.4, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: n, immediateRender: false }, t0); }
   setPose(hero, { x: 960, y: 540, ry: 0, s: 0.85 });
@@ -385,9 +393,9 @@ let hero, portalHome, portalEnjoy;
   tl.fromTo(DB, { scale: 1.1 }, { scale: 1, duration: 6, ease: 'none', immediateRender: false }, T0 - 0.6);
   tl.to(DB, { autoAlpha: 0, duration: 0.8 }, at('then tap') - 0.6);
   lineSweep(T0 - 0.6, L);
-  const tTap = at('tap'), tRot = at('rotate the model'), tCh = at('choose your unit'), tW = at('walk through'), tB = at('before the first'), tS = at('see the available');
+  const tTap = at('tap'), tRot = at('rotate the model'), tCh = at('choose your unit'), tB = at('before the first'), tS = at('see the available');
   chapterLabel('01', 'Discover', T0 + 0.2, tTap - 0.1);
-  chapterLabel('01', 'Discover', tB + 0.45, TE - 0.5);
+  chapterLabel('01', 'Discover', tS + 0.3, TE - 0.5);
 
   // radar rings behind the phone (the discovery engine)
   const RR = svgEl([0, 1, 2, 3].map(() => `<circle cx="620" cy="540" r="120" data-nodraw="1"/>`).join(''), { sw: 1.5 }, L);
@@ -397,44 +405,100 @@ let hero, portalHome, portalEnjoy;
   tl.to(RR, { autoAlpha: 0, duration: 0.4 }, at('then tap') - 0.3);
 
   pose(hero, T0 - 0.75, { x: 620, ry: 12, dur: 0.9 });
-  swap(hero, 'ui:02', T0 - 0.2);
+  const s02 = swap(hero, 'ui:02', T0 - 0.2);
+  onUI(s02, (d, q) => {
+    tl.fromTo(q('img'), { scale: 1.12 }, { scale: 1, duration: 2.6, ease: 'power2.out', immediateRender: true }, T0 - 0.2);
+    const lab = q.all('div').find(e => /^DISCOVER/.test(e.innerText) && e.getBoundingClientRect().height < 60);
+    uiRise([lab, q('h1'), q('p'), q('button')].filter(Boolean), T0 + 0.35, { stagger: 0.1, y: 18 });
+  });
   const e1 = ltext('Explore every destination|[with complete clarity.]', 'h2 cream', 1000, 280, L);
   rise(e1, T0 + 0.2, { lineGap: [T0 + 0.2, at('with complete clarity')] });
-  const lst = ltext('The layouts.|The views.|The neighborhood.', 'h2 cream', 1000, 520, L, 'line-height:1.35');
-  rise(lst, at('the layouts'), { lineGap: [at('the layouts'), at('the views'), at('the neighborhood')] });
-  focusLine(lst, 0, at('the layouts')); focusLine(lst, 1, at('the views')); focusLine(lst, 2, at('the neighborhood'));
-  swap(hero, 'ui:06', at('layouts') - 0.1);
+  const lst = ltext('The layouts,|the views,|and the neighborhood|[around you.]', 'h2 cream', 1000, 500, L, 'line-height:1.3');
+  const tLy = [at('the layouts'), at('the views'), at('and the neighborhood'), at('around you', 2)];
+  rise(lst, tLy[0], { lineGap: tLy });
+  tLy.slice(0, 3).forEach((t, i) => focusLine(lst, i, t));
+  const s06 = swap(hero, 'ui:06', at('layouts') - 0.1);
+  onUI(s06, (d, q) => {
+    q.all('.pin').forEach((e, i) => tl.fromTo(e, { opacity: 0, y: -18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'back.out(2)', immediateRender: true }, at('layouts') + 0.35 + i * 0.09));
+    tl.fromTo(q('section'), { y: 120 }, { y: 0, duration: 0.7, ease: 'power3.out', immediateRender: true }, at('layouts') + 0.3);
+  });
   swap(hero, 'ui:07', at('views') - 0.1);
   tl.to(hero.cur, { scale: 1.18, transformOrigin: '50% 42%', duration: 1.6, ease: 'power2.inOut' }, at('neighborhood'));
-  hide(e1, at('then tap') - 0.3, 0.35); hide(lst, at('then tap') - 0.3, 0.35);
+  const eNb = after('neighborhood around you');      // both blocks leave before the phone slides to the centre
+  hide(e1, eNb - 0.05, 0.2); hide(lst, eNb - 0.05, 0.2);
 
   // "Then tap" opens the 3D Model View: rotate the model, choose the unit, walk through it
-  pose(hero, at('then tap') - 0.35, { x: 960, ry: 0, dur: 0.6, ease: 'power2.inOut' });
+  pose(hero, eNb + 0.1, { x: 960, ry: 0, dur: 0.4, ease: 'power2.inOut' });
   swap(hero, 'ui:10', at('then tap') - 0.15, 'fade');
   tap(hero, 0.5, 0.58, tTap - 0.05);
   const ML = zlayer(60); gsap.set(ML, { autoAlpha: 0 });
   const mv = el('<div class="layer"></div>', ML);
   gclip(mv, 'model', tTap + 0.15, tS, { from: 1.45 });
-  el('<div class="layer" style="background:linear-gradient(270deg,rgba(2,12,31,.62),rgba(2,12,31,.25) 30%,rgba(2,12,31,0) 48%)"></div>', mv);
+  el('<div class="layer" style="background:linear-gradient(270deg,rgba(2,12,31,.82),rgba(2,12,31,.55) 28%,rgba(2,12,31,0) 52%)"></div>', mv);
   portalOpen(ML, tTap + 0.15, screenRect(hero, 960), 0.75);
-  const tr = ltext('Tap.|Rotate the model.|Choose your unit.|Walk through.', 'h3 cream', 1420, 330, ML, 'line-height:1.75;text-shadow:0 4px 24px rgba(0,0,0,.45)');
-  rise(tr, tTap + 0.2, { lineGap: [tTap + 0.2, tRot, tCh, tW] });
-  focusLine(tr, 0, tTap + 0.2); focusLine(tr, 1, tRot); focusLine(tr, 2, tCh); focusLine(tr, 3, tW);
+  const tr = ltext('Then tap,|rotate the model,|choose your unit,|and walk through|[your environment.]', 'h3 cream', 1400, 300, ML, 'line-height:1.7;text-shadow:0 4px 24px rgba(0,0,0,.45)');
+  const tEn = at('your environment'), tAw = at('and walk through');
+  rise(tr, tTap + 0.2, { lineGap: [tTap + 0.2, tRot, tCh, tAw, tEn] });
+  focusLine(tr, 0, tTap + 0.2); focusLine(tr, 1, tRot); focusLine(tr, 2, tCh); focusLine(tr, 3, tAw);
   hide(tr, tB - 0.3, 0.3);
-  // "Before the first foundation stone is even laid": the 3D configurator (its green background turned brand navy)
-  const cf = el('<div class="layer bg-navy"></div>', ML);
-  gsap.set(cf, { autoAlpha: 0 });
-  const cfw = el('<div class="abs" data-ob="win" style="left:340px;top:300px;width:1240px;height:698px;border-radius:30px;overflow:hidden;background:#0c2856;box-shadow:0 40px 100px rgba(0,0,0,.45)"></div>', cf);
-  gclip(cfw, 'cfg3d', tB + 0.05, tS + 0.6, { from: 0 });
-  tl.fromTo(cf, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power3.inOut', immediateRender: false }, tB + 0.05);
-  tl.fromTo(cfw, { scale: 1.08 }, { scale: 1, duration: 2.2, ease: 'power2.out', immediateRender: false }, tB + 0.05);
+  // "Before the first foundation stone is even laid": full-screen Furniture Packages — browse the three styles, choose one
+  const PK = el('<div class="layer app" style="background:#0b1a33"></div>', ML);
+  gsap.set(PK, { autoAlpha: 0 });
+  const tA = tB - 0.05, steps = [[tA, 0], [tB + 0.85, 2], [tB + 1.6, 1]], tSel = tB + 2.05, tEndA = tS + 0.6;
+  const heroes = PKG.map(p => el(`<div class="layer" style="background:url('${A('pkg/' + p.img + '.jpg')}') center/cover"></div>`, PK));
+  heroes.forEach((h, i) => gsap.set(h, { autoAlpha: i === steps[0][1] ? 1 : 0, zIndex: 0 }));
+  el(`<div class="layer" style="z-index:5;background:linear-gradient(90deg,rgba(6,14,32,.86) 0%,rgba(6,14,32,.6) 30%,rgba(6,14,32,0) 56%),linear-gradient(180deg,rgba(6,14,32,.62) 0%,rgba(6,14,32,0) 20%,rgba(6,14,32,0) 62%,rgba(6,14,32,.78) 100%)"></div>`, PK);
+  const UIa = el('<div class="layer" style="z-index:6"></div>', PK);
+  el(`<div class="gb" style="left:64px;top:44px">${ICO.back}</div>`, UIa);
+  el(`<div class="abs" style="left:560px;width:800px;top:46px;text-align:center"><div style="font-size:26px;font-weight:500">Furniture Packages</div><div style="font-size:18px;opacity:.75;margin-top:5px">Unit A4 · Wadi Residence</div></div>`, UIa);
+  el(`<div class="abs" style="right:150px;top:53px;display:flex;gap:10px">${['Bedroom', 'Living', 'Dining', 'Kitchen'].map((r, i) => `<span class="rc${i ? '' : ' on'}">${r}</span>`).join('')}</div>`, UIa);
+  el(`<div class="gb" style="right:64px;top:44px">${ICO.cube}</div>`, UIa);
+  // the chosen style: name, description, price, pieces (as on the app screen)
+  const pn = el(`<div class="glass" data-ob="pkg" style="left:120px;top:560px;width:660px;height:360px"></div>`, UIa);
+  const nm = PKG.map((p, i) => el(`<div class="abs" style="left:40px;top:34px;width:580px">
+      <div style="font-size:16px;letter-spacing:2.6px;opacity:.7">STYLE ${i + 1} OF 3</div>
+      <div style="font-size:50px;font-weight:500;letter-spacing:-.8px;margin-top:8px">${p.name}</div>
+      <div style="font-size:21px;line-height:30px;opacity:.9;margin-top:8px">${p.desc}</div></div>`, pn));
+  const pr = el(`<div class="abs" style="left:40px;top:236px;display:flex;align-items:center;gap:12px;font-size:48px;font-weight:500;letter-spacing:-.7px">${SARi(36)}<span>${money(PKG[0].price)}</span></div>`, pn);
+  const meta = el('<div class="abs" style="left:40px;top:302px;font-size:18px;opacity:.72"></div>', pn);
+  const go = el(`<div class="abs" style="right:36px;top:250px;width:76px;height:76px;border-radius:50%;background:#fff;color:#0B1F44;display:grid;place-items:center;box-shadow:0 12px 28px rgba(0,0,0,.35)">${ICO.arrow}</div>`, pn);
+  // the package menu: all three, single selection
+  const MN = el('<div class="abs" style="left:840px;top:760px;width:960px;height:160px"></div>', UIa);
+  const opts = PKG.map((p, i) => el(`<div class="opt" data-ob="opt" style="left:${i * 330}px"><div class="on"></div><img src="${A('pkg/' + p.img + '-p.jpg')}">
+      <div class="tx"><div class="n" style="font-size:23px;font-weight:500">${p.name}</div>
+      <div class="v" style="display:flex;align-items:center;gap:6px;font-size:25px;font-weight:500;margin-top:16px">${SARi(19)}${money(p.price)}</div>
+      <div class="m" style="font-size:16px;opacity:.7;margin-top:8px">${p.pieces} · excl. VAT</div></div>
+      <div class="ck" style="position:absolute;left:22px;top:22px;box-shadow:0 0 0 3px #fff;width:34px;height:34px;border-radius:50%;background:#2E9E6B;display:grid;place-items:center;opacity:0">${ICO.check}</div></div>`, MN));
+  gsap.set(nm, { autoAlpha: 0 });
+  steps.forEach(([t, k], j) => {
+    const prev = j ? steps[j - 1][1] : null, h = heroes[k];
+    if (j) {
+      tl.set(h, { zIndex: j }, t);
+      tl.fromTo(h, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: false }, t);
+      tl.to(nm[prev], { autoAlpha: 0, y: -16, duration: 0.25, ease: EASE_IN }, t);
+      const o = { v: PKG[prev].price }, sp = pr.querySelector('span');
+      tl.fromTo(o, { v: PKG[prev].price }, { v: PKG[k].price, duration: 0.5, ease: 'power2.out', immediateRender: false, onUpdate: () => { sp.textContent = money(o.v); } }, t + 0.05);
+      tl.to(opts[prev].querySelector('.on'), { opacity: 0, duration: 0.3 }, t);
+      tl.to(opts[prev].querySelector('.tx'), { color: '#fff', duration: 0.3 }, t);
+    }
+    tl.fromTo(h, { scale: 1.07 }, { scale: 1, duration: 2.4, ease: 'power1.out', immediateRender: false }, t);
+    tl.fromTo(nm[k], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: EASE, immediateRender: false }, t + (j ? 0.15 : 0.3));
+    tl.to(opts[k].querySelector('.on'), { opacity: 1, duration: 0.3 }, t);
+    tl.to(opts[k].querySelector('.tx'), { color: '#0B1F44', duration: 0.3 }, t);
+  });
+  htmlAt(meta, steps.map(([t, k]) => [t, `${PKG[k].pieces} · 4 rooms · excl. VAT`]), tEndA);
+  tl.fromTo(go, { scale: 1 }, { scale: 0.88, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.inOut', immediateRender: false }, tSel - 0.2);
+  tl.fromTo(opts[1].querySelector('.ck'), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2.4)', immediateRender: false }, tSel);
+  tl.fromTo(PK, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power3.inOut', immediateRender: false }, tA);
+  tl.fromTo([pn, MN], { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.1, ease: EASE, immediateRender: false }, tA + 0.3);
   brandSweep(tB - 0.05, ML, { n: 8 });
-  const bfs = ltext('Before the first foundation|stone is even laid,', 'h2 cream', 340, 92, cf, 'font-size:66px');
+  const bfs = ltext('Before the first foundation|stone is even laid,', 'h2 cream', 120, 170, UIa, 'font-size:66px;font-family:Huwiya');
   rise(bfs, tB + 0.2, { lineGap: [tB + 0.2, at('stone is even laid')] }); hide(bfs, tS - 0.6, 0.3);
   // …and it all closes into the phone, which now lists the available units
   setPoseAt(hero, tS - 1.2, { x: 1400, ry: 0 });
-  swap(hero, 'ui:04', tS - 1.2, 'fade');
-  portalClose(ML, tS - 0.5, screenRect(hero, 1400), 0.85);
+  const s04 = swap(hero, 'ui:04', tS - 1.2, 'fade');
+  onUI(s04, (d, q) => { uiRise(q.all('article'), tS + 0.05, { stagger: 0.14, y: 40, dur: 0.6 }); });
+  portalClose(ML, tS - 0.3, screenRect(hero, 1400), 0.85);
   pose(hero, tS + 0.45, { x: 1400, ry: -12, dur: 0.9, ease: 'power2.inOut' });
   // P1 (the tower, one floor lit) behind the live unit grid
   const UB = el('<div class="layer"></div>', L); gsap.set(UB, { autoAlpha: 0 });
@@ -517,6 +581,46 @@ let hero, portalHome, portalEnjoy;
   tl.fromTo(pw, { scale: 1.08 }, { scale: 1.0, duration: TV - TE + 1.2, ease: 'power1.out', immediateRender: false }, TE - 0.55);
   rise(ltext('So you can find|your [perfect home,]', 'h1 navy', 120, 110, P), TE, { lineGap: [TE, at('your perfect home')] });
   rise(ltext('not just an empty room.', 'h2 navy', 124, 340, P, 'opacity:.8'), at('not just an empty'));
+
+  // the held beat after "…empty room.": full-screen Package Details — every piece priced, the total, added to the selection
+  const tD = after('not just an empty room') - 0.1, tDx = TV - 0.75;
+  const PD = zlayer(61, 'app'); gsap.set(PD, { autoAlpha: 0 });
+  const im = el(`<div class="layer" style="background:url('${A('pkg/contemporary.jpg')}') center/cover"></div>`, PD);
+  el(`<div class="layer" style="background:linear-gradient(90deg,rgba(6,14,32,.8) 0%,rgba(6,14,32,.45) 26%,rgba(6,14,32,0) 44%),linear-gradient(180deg,rgba(6,14,32,.62) 0%,rgba(6,14,32,0) 20%,rgba(6,14,32,0) 75%,rgba(6,14,32,.5) 100%)"></div>`, PD);
+  const TG = [['Artwork', 3000, 1320, 316, 1], ['Lamps', 1100, 1025, 594], ['Lounge chair', 6900, 760, 682], ['Nightstands ×2', 3600, 1654, 774, 1], ['King bed', 12400, 1120, 826], ['Wool rug', 2800, 900, 1000]];
+  const tags = TG.map(([n, v, x, y, r]) => el(`<div class="tag${r ? ' r' : ''}" data-ob="tag" style="${r ? `right:${W - x - 24}px` : `left:${x - 24}px`};top:${y - 24}px"><i></i>${n}<b>${SARi(15)}${money(v)}</b></div>`, im));
+  el(`<div class="gb" style="left:64px;top:44px">${ICO.back}</div>`, PD);
+  el(`<div class="abs" style="left:560px;width:800px;top:46px;text-align:center"><div style="font-size:26px;font-weight:500">Contemporary</div><div style="font-size:18px;opacity:.75;margin-top:5px">Tap a tag to see the piece</div></div>`, PD);
+  el(`<div class="gb" style="right:64px;top:44px">${ICO.tag}</div>`, PD);
+  const dp = el(`<div class="glass" data-ob="pkg" style="left:72px;top:556px;width:604px;height:448px;padding:32px 34px">
+      <div style="display:flex;gap:10px">${[['Bedroom', 6], ['Living', 2], ['Dining', 2], ['Kitchen', 2]].map(([r, n], i) => `<span class="rc${i ? '' : ' on'}">${r} <small>${n}</small></span>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:30px;font-size:22px"><span>Master bedroom · 6 pieces</span><b style="display:flex;align-items:center;gap:6px;font-size:25px;font-weight:600">${SARi(19)}<span class="bd">29,800</span></b></div>
+      <div style="height:1px;background:rgba(255,255,255,.16);margin-top:22px"></div>
+      <div style="font-size:17px;opacity:.72;margin-top:20px">Package total</div>
+      <div style="display:flex;align-items:center;gap:12px;font-size:56px;font-weight:500;letter-spacing:-.8px;margin-top:4px">${SARi(40)}<span class="tt">124,775</span></div>
+      <div style="font-size:17px;opacity:.72;margin-top:2px">incl. VAT · delivery &amp; installation included</div>
+      <div class="bt" style="position:absolute;left:34px;right:34px;bottom:30px;height:62px;border-radius:31px;background:#fff;color:#0B1F44;font-size:20px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 12px 28px rgba(0,0,0,.35)"><span class="b1" style="display:flex;align-items:center;gap:12px">Add Contemporary to my selection ${ICO.arrow}</span></div></div>`, PD);
+  const bt = dp.querySelector('.bt'), b1 = dp.querySelector('.b1');
+  gsap.set([dp, ...tags], { autoAlpha: 0 });
+  const b2 = el(`<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;opacity:0"><span style="width:30px;height:30px;border-radius:50%;background:#2E9E6B;display:grid;place-items:center">${ICO.check}</span>Added to my selection</span>`, bt);
+  tl.fromTo(PD, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.75, ease: 'power3.inOut', immediateRender: false }, tD);
+  brandSweep(tD - 0.05, PD, { n: 8 });
+  tl.fromTo(im, { scale: 1.08 }, { scale: 1, duration: tDx - tD + 0.6, ease: 'power1.out', immediateRender: false }, tD);
+  tl.fromTo(dp, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: EASE, immediateRender: false }, tD + 0.3);
+  tags.forEach((g, i) => {
+    const t = tD + 0.55 + i * 0.17, r = g.classList.contains('r');
+    tl.fromTo(g, { autoAlpha: 0, clipPath: r ? 'inset(0 0 0 calc(100% - 48px) round 24px)' : 'inset(0 calc(100% - 48px) 0 0 round 24px)' },
+      { autoAlpha: 1, clipPath: 'inset(0 0% 0 0% round 24px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, t);
+    tl.fromTo(g.querySelector('i'), { scale: 0.3 }, { scale: 1, duration: 0.35, ease: 'back.out(2.6)', immediateRender: false }, t);
+  });
+  count(dp.querySelector('.bd'), 0, 29800, tD + 0.55, 1.1, money);
+  count(dp.querySelector('.tt'), 0, 124775, tD + 0.6, 1.4, money);
+  const tPr = tD + 2.15;
+  tl.fromTo(bt, { scale: 1 }, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.inOut', immediateRender: false }, tPr);
+  tl.to(b1, { opacity: 0, duration: 0.12 }, tPr + 0.12); tl.to(b2, { opacity: 1, duration: 0.2 }, tPr + 0.26);
+  tl.to(PD, { clipPath: 'inset(0% 100% 0% 0%)', duration: 0.7, ease: 'power3.inOut' }, tDx - 0.15);
+  tl.set(PD, { autoAlpha: 0 }, tDx + 0.55);
+  tl.set(P, { autoAlpha: 0 }, tD + 0.8);
 }
 
 // =====================================================================
@@ -529,30 +633,21 @@ let hero, portalHome, portalEnjoy;
   lineSweep(T0 - 0.2, L, { dir: -1 });
   chapterLabel('02', 'Create', T0 + 0.3, TH - 0.4);
   const p = hero;
-  setPoseAt(p, T0 - 0.95, { x: 1260, ry: 0 });
-  swap(p, 'ui:03', T0 - 0.95, 'fade');
+  setPoseAt(p, T0 - 1.7, { x: 1260, ry: 0 });
+  const s03 = swap(p, 'ui:03', T0 - 1.7, 'fade');    // done while the Package Details still covers the stage
+  onUI(s03, (d, q) => {                              // the phone number types in, then Face ID
+    const num = q('#ph'), full = num.value, t1 = T0 - 0.55, step = 0.06;
+    tl.fromTo({ p: 0 }, { p: 0 }, { p: 1, duration: full.length * step + 0.3, ease: 'none', immediateRender: true,
+      onUpdate: () => { num.value = full.slice(0, Math.max(0, Math.min(full.length, Math.floor((tl.time() - t1) / step) + 1))); } }, t1);
+  });
   pose(p, T0 + 0.1, { x: 1260, ry: -12, dur: 0.8, ease: 'power2.inOut' });
 
-  // the furnished apartment settles into a style card; the style switches as the client's P3 morphs
-  const CR = { l: 140, t: 380, w: 860, h: 484, r: 30 };
-  const P = portalHome, pw = P.firstChild;
-  tl.to(P.querySelectorAll('.h1,.h2'), { autoAlpha: 0, duration: 0.3 }, T0 - 0.75);
-  tl.to(P, { clipPath: insetFor(CR), duration: 0.85, ease: 'power3.inOut' }, T0 - 0.45);
-  tl.to(pw, { left: CR.l - 60, top: CR.t - 30, width: CR.w + 120, height: (CR.w + 120) * 9 / 16, duration: 0.85, ease: 'power3.inOut' }, T0 - 0.45);
-  const p3 = el(`<div class="abs" style="left:${CR.l}px;top:${CR.t}px;width:${CR.w}px;height:${CR.h}px;border-radius:30px;overflow:hidden"></div>`, P);
-  const tP3 = T0 + 0.45, morph = tP3 + (3.05 - 1.2);
-  gclip(p3, 'p3', tP3, morph + 1.0, { from: 1.2 });
-  gsap.set(p3, { autoAlpha: 0 });
-  tl.to(p3, { autoAlpha: 1, duration: 0.5 }, tP3);
-  const pill = el(`<div class="abs" style="left:${CR.l + 24}px;top:${CR.t + CR.h - 78}px;width:380px;height:54px;border-radius:999px;background:rgba(4,30,66,.82);border:1px solid rgba(214,165,140,.5)">
-      <div class="k" style="position:absolute;left:4px;top:4px;width:150px;height:46px;border-radius:999px;background:linear-gradient(100deg,#B07A63,#E6BFA4)"></div>
-      <div class="o1" style="position:absolute;left:4px;top:0;width:150px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#041E42">Classic</div>
-      <div class="o2" style="position:absolute;left:158px;top:0;width:218px;height:54px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#F4EEE8">Contemporary</div></div>`, P);
-  gsap.set(pill, { autoAlpha: 0 }); pop(pill, tP3 + 0.2);
-  tl.to(pill.querySelector('.k'), { left: 158, width: 218, duration: 0.45, ease: 'power3.inOut' }, morph - 0.2);
-  tl.to(pill.querySelector('.o1'), { color: '#F4EEE8', duration: 0.2 }, morph - 0.1); tl.to(pill.querySelector('.o2'), { color: '#041E42', duration: 0.2 }, morph - 0.1);
-  const cardOut = at('request information') - 0.15;
-  tl.to(P, { clipPath: `inset(${CR.t}px ${W - CR.l - CR.w + 700}px ${H - CR.t - CR.h}px ${CR.l - 700}px round 30px)`, autoAlpha: 0, duration: 0.5, ease: 'power3.in' }, cardOut);
+  // G2: verifying with Face ID through the platform, in a window beside the phone
+  const GW = el('<div class="abs" data-ob="win" style="left:140px;top:380px;width:860px;height:484px;border-radius:30px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.45)"></div>', L);
+  gsap.set(GW, { autoAlpha: 0 });
+  gclip(GW, 'g2', T0 - 0.5, at('request information'), { from: 0.9 });
+  tl.fromTo(GW, { autoAlpha: 0, scale: 0.94 }, { autoAlpha: 1, scale: 1, duration: 0.6, ease: EASE, immediateRender: false }, T0 - 0.45);
+  tl.to(GW, { autoAlpha: 0, x: -60, duration: 0.4, ease: EASE_IN }, at('request information') - 0.4);
 
   const vt = ltext('Verify your identity|[in seconds.]', 'h2 cream', 150, 120, L);
   rise(vt, T0 + 0.1, { lineGap: [T0 + 0.1, at('in seconds')] }); hide(vt, at('request information') - 0.3, 0.3);
@@ -561,21 +656,22 @@ let hero, portalHome, portalEnjoy;
     <path d="M8 26V14a6 6 0 0 1 6-6h12M74 8h12a6 6 0 0 1 6 6v12M92 74v12a6 6 0 0 1-6 6H74M26 92H14a6 6 0 0 1-6-6V74"/>
     <path d="M34 36v6M66 36v6M50 40v16h-5M38 66c6 6 18 6 24 0"/></g></svg>`, [0.28, 0.3, 0.44, 0.2], 'z-index:13');
   const scan = ov(p, '', [0.3, 0.31, 0.4, 0.004], 'background:linear-gradient(90deg,transparent,#E6BFA4,transparent);z-index:14;box-shadow:0 0 18px 4px rgba(230,191,164,.6)');
-  const ok = ov(p, `<div style="display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font-size:22px;font-weight:500"><span class="tick" style="width:64px;height:64px">${ICON.check}</span>Identity verified</div>`, [0.1, 0.55, 0.8, 0.12], 'z-index:14;display:flex;justify-content:center');
-  [scrim, fid, scan, ok].forEach(e => gsap.set(e, { autoAlpha: 0 }));
+  [scrim, fid, scan].forEach(e => gsap.set(e, { autoAlpha: 0 }));
   const tF = T0 + 0.5;
   tl.fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, immediateRender: false }, tF);
   tl.fromTo(fid, { autoAlpha: 0, scale: 1.3 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: EASE, immediateRender: false }, tF + 0.05);
   tl.fromTo(scan, { autoAlpha: 1, top: '31%' }, { top: '49%', duration: 0.45, repeat: 1, yoyo: true, ease: 'sine.inOut', immediateRender: false }, tF + 0.2);
   tl.to(scan, { autoAlpha: 0, duration: 0.15 }, tF + 1.1);
   tl.to(fid.querySelector('g'), { stroke: '#E6BFA4', duration: 0.25 }, tF + 1.1);
-  pop(ok, tF + 1.15);
-  tl.to([scrim, fid, ok], { autoAlpha: 0, duration: 0.3 }, at('request information') - 0.3);
+  tl.to([scrim, fid], { autoAlpha: 0, duration: 0.3 }, tF + 1.35);
+  const idv = swap(p, 'ui:33', tF + 1.3, 'fade');
+  onUI(idv, (d, q) => { uiRise(q.all('.dr'), tF + 1.5, { stagger: 0.07, y: 14 }); });
 
   // request · visit · reserve — the reservation is the live "Your Selection" screen, P5 (the furnished plan) behind it
   const tRq = at('request information'), tBk = at('book a dedicated'), tRv = at('reserve your unit');
   pose(p, tRq - 0.4, { x: 1360, ry: -10, dur: 0.7 });
   const pj = swap(p, 'ui:09', tRq - 0.15);
+  onUI(pj, (d, q) => { uiRise(q.all('.stat'), tRq + 0.25, { stagger: 0.08, y: 18 }); });
   const rv = ltext('Request information.|Book a dedicated visit.|[And reserve your unit.]', 'h2 cream', 150, 330, L, 'line-height:1.45;font-size:66px');
   rise(rv, tRq, { lineGap: [tRq, tBk, at('and reserve your unit')] });
   focusLine(rv, 0, tRq); focusLine(rv, 1, tBk); focusLine(rv, 2, at('and reserve your unit'));
@@ -589,7 +685,7 @@ let hero, portalHome, portalEnjoy;
   gclip(R5, 'p5', tRv - 0.5, at('review your contract') + 0.6, { from: 1.6 });
   el('<div class="layer" style="background:linear-gradient(90deg,rgba(2,12,31,.9),rgba(2,12,31,.6) 45%,rgba(2,12,31,.25))"></div>', R5);
   tl.to(R5, { autoAlpha: 1, duration: 0.6 }, tRv - 0.5);
-  const sel = swap(p, 'ui:20', tRv - 0.2);
+  const sel = swap(p, 'ui:32', tRv - 0.2);
   onUI(sel, (d, q) => {
     uiRise(q.all('.card.rm'), tRv + 0.1, { stagger: 0.09 });
     q.all('.wave .sr b').slice(1).forEach((b) => uiCount(d, b.textContent.trim(), tRv + 0.4, 0.9));
@@ -599,7 +695,8 @@ let hero, portalHome, portalEnjoy;
   // review & sign — the Sales Agreement on the phone opens into P6, signed on the tablet
   const tR = at('review your contract'), tSg = at('then sign it'), tP = at('with a single platform');
   pose(p, tR - 0.55, { x: 1360, ry: 0, dur: 0.45, ease: 'power2.inOut' });
-  swap(p, 'ui:21', tR - 0.5, 'fade');
+  const sa = swap(p, 'ui:34', tR - 0.5, 'fade');
+  onUI(sa, (d, q) => { uiRise(q.all('.cl'), tR - 0.3, { stagger: 0.08, y: 10 }); });
   const SG = zlayer(60); gsap.set(SG, { autoAlpha: 0 });
   gclip(el('<div class="layer"></div>', SG), 'p6', tR + 0.35, tP + 0.2, { from: 0.4 });
   el('<div class="layer" style="background:linear-gradient(180deg,rgba(2,12,31,.62),rgba(2,12,31,.2) 32%,rgba(2,12,31,0) 50%)"></div>', SG);
@@ -610,7 +707,8 @@ let hero, portalHome, portalEnjoy;
   const sg2 = ltext('Then sign it digitally|and [securely.]', 'h2 cream', 120, 140, SG);
   rise(sg2, tSg, { lineGap: [tSg, at('and securely')] }); hide(sg2, tP - 0.85, 0.3);
   setPoseAt(p, tP - 0.95, { x: 1400, ry: 0 });
-  swap(p, 'ui:16', tP - 0.95, 'fade');
+  const s16 = swap(p, 'ui:16', tP - 0.95, 'fade');
+  onUI(s16, (d, q) => { uiRise(q.all('.card'), tP - 0.35, { stagger: 0.07, y: 22 }); });
   portalClose(SG, tP - 0.8, screenRect(p, 1400), 0.85);
 
   // "With a single platform, ZOOD keeps everything with you."
@@ -668,7 +766,11 @@ let hero, portalHome, portalEnjoy;
 
   // construction tracking
   setPoseAt(p, tT - 0.7, { x: 640, ry: 12 });
-  swap(p, 'ui:15', tT - 0.7, 'fade');
+  const s15 = swap(p, 'ui:15', tT - 0.7, 'fade');
+  onUI(s15, (d, q) => {
+    uiCount(d, '68%', tT + 0.3, 1.6);
+    uiRise([q('section'), ...q.all('.col')], tT - 0.1, { stagger: 0.06, y: 18 });
+  });
   tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.35);
   const big = el('<div class="abs h0 cream" style="left:1060px;top:300px;font-size:220px"><span class="w n">0%</span></div>', L);
   gsap.set(big, { autoAlpha: 0 }); reveal(big, tT, { stagger: 0 });
