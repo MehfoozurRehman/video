@@ -444,7 +444,8 @@ let hero, portalHome, portalEnjoy;
   // "Before the first foundation stone is even laid": full-screen Furniture Packages — browse the three styles, choose one
   const PK = el('<div class="layer app" style="background:#0b1a33"></div>', ML);
   gsap.set(PK, { autoAlpha: 0 });
-  const tA = tB - 0.05, steps = [[tA, 0], [tB + 0.85, 2], [tB + 1.6, 1]], tSel = tB + 2.05, tEndA = tS + 0.6;
+  const span = tS - 0.3 - tB, tA = tB - 0.05;           // the styles share the whole moment (it grows with the held beat in the voice)
+  const steps = [[tA, 0], [tB + span * 0.32, 2], [tB + span * 0.6, 1]], tSel = tB + span * 0.8, tEndA = tS + 0.6;
   const heroes = PKG.map(p => el(`<div class="layer" style="background:url('${A('pkg/' + p.img + '.jpg')}') center/cover"></div>`, PK));
   heroes.forEach((h, i) => gsap.set(h, { autoAlpha: i === steps[0][1] ? 1 : 0, zIndex: 0 }));
   el(`<div class="layer" style="z-index:5;background:linear-gradient(90deg,rgba(6,14,32,.86) 0%,rgba(6,14,32,.6) 30%,rgba(6,14,32,0) 56%),linear-gradient(180deg,rgba(6,14,32,.62) 0%,rgba(6,14,32,0) 20%,rgba(6,14,32,0) 62%,rgba(6,14,32,.78) 100%)"></div>`, PK);
@@ -474,10 +475,10 @@ let hero, portalHome, portalEnjoy;
     const prev = j ? steps[j - 1][1] : null, h = heroes[k];
     if (j) {
       tl.set(h, { zIndex: j }, t);
-      tl.fromTo(h, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.6, ease: 'power3.inOut', immediateRender: false }, t);
+      tl.fromTo(h, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.9, ease: 'power2.inOut', immediateRender: false }, t);
       tl.to(nm[prev], { autoAlpha: 0, y: -16, duration: 0.25, ease: EASE_IN }, t);
       const o = { v: PKG[prev].price }, sp = pr.querySelector('span');
-      tl.fromTo(o, { v: PKG[prev].price }, { v: PKG[k].price, duration: 0.5, ease: 'power2.out', immediateRender: false, onUpdate: () => { sp.textContent = money(o.v); } }, t + 0.05);
+      tl.fromTo(o, { v: PKG[prev].price }, { v: PKG[k].price, duration: 0.8, ease: 'power2.out', immediateRender: false, onUpdate: () => { sp.textContent = money(o.v); } }, t + 0.05);
       tl.to(opts[prev].querySelector('.on'), { opacity: 0, duration: 0.3 }, t);
       tl.to(opts[prev].querySelector('.tx'), { color: '#fff', duration: 0.3 }, t);
     }
@@ -721,17 +722,17 @@ let hero, portalHome, portalEnjoy;
   const tEp = at('every payment'), tEs = at('every stage'), tEu = at('every update'), tT = at('track the progress');
   tl.to(p, { x: 700, autoAlpha: 0, duration: 0.5, ease: 'power3.in' }, tEp - 0.45);
   const JL = el('<div class="layer"></div>', L); gsap.set(JL, { autoAlpha: 0 });
-  tl.to(JL, { autoAlpha: 1, duration: 0.4 }, tEp - 0.35); tl.to(JL, { autoAlpha: 0, duration: 0.4 }, tT - 0.8);
+  tl.to(JL, { autoAlpha: 1, duration: 0.4 }, tEp - 0.35); tl.to(JL, { autoAlpha: 0, duration: 0.35 }, tT - 1.0);
   const ev = ltext('Every payment.|Every stage.|Every update.', 'h2 cream', 150, 120, JL, 'line-height:1.3');
   rise(ev, tEp, { lineGap: [tEp, tEs, tEu] });
   focusLine(ev, 0, tEp); focusLine(ev, 1, tEs); focusLine(ev, 2, tEu);
   const MS = [['Booking', 'Paid'], ['Deposit', 'Paid'], ['Excavation', 'Paid'], ['Foundation', 'Paid'], ['Structure 50%', 'Paid'], ['Structure complete', 'Paid'], ['Facade start', 'Paid'],
     ['Facade complete', 'Due 15 Nov'], ['Interior finishing', 'Feb 2027'], ['MEP & landscaping', 'Apr 2027'], ['Final inspection', 'Q2 2027'], ['Handover', 'Q2 2027']];
-  const TR = el('<div class="abs" style="left:0;top:0;width:3400px;height:1080px"></div>', JL);
-  const nx = (i) => 240 + i * 250, ny = (i) => 700 + Math.sin(i * 0.9) * 70;
+  const TR = el('<div class="abs" style="left:0;top:0;width:4400px;height:1080px"></div>', JL);
+  const nx = (i) => 260 + i * 330, ny = (i) => 720 + Math.sin(i * 0.9) * 60;   // wide spacing: about five milestones in view
   let dpath = `M ${nx(0) - 260} ${ny(0)}`;
-  for (let i = 0; i < MS.length; i++) dpath += i ? ` S ${nx(i) - 125} ${ny(i)} ${nx(i)} ${ny(i)}` : ` L ${nx(0)} ${ny(0)}`;
-  const PS = el(`<svg class="abs" width="3400" height="1080" style="left:0;top:0;overflow:visible">${ROSE_GRAD_SVG.replace('id="rg"', 'id="rgJ"')}
+  for (let i = 0; i < MS.length; i++) dpath += i ? ` S ${nx(i) - 165} ${ny(i)} ${nx(i)} ${ny(i)}` : ` L ${nx(0)} ${ny(0)}`;
+  const PS = el(`<svg class="abs" width="4400" height="1080" style="left:0;top:0;overflow:visible">${ROSE_GRAD_SVG.replace('id="rg"', 'id="rgJ"')}
       <path d="${dpath}" fill="none" stroke="rgba(244,238,232,.16)" stroke-width="3"/><path class="pv" d="${dpath}" fill="none" stroke="url(#rgJ)" stroke-width="4" stroke-linecap="round"/></svg>`, TR);
   const pv = PS.querySelector('.pv'), PL = pv.getTotalLength();
   gsap.set(pv, { strokeDasharray: PL, strokeDashoffset: PL });
@@ -740,24 +741,28 @@ let hero, portalHome, portalEnjoy;
   for (let i = 0; i <= 7; i++) tl.to(pv, { strokeDashoffset: PL * (1 - fracAt(i)), duration: 0.29, ease: 'none' }, lit(i) - 0.29);
   MS.forEach(([name, st], i) => {
     const paid = i < 7, cur = i === 7, up = i % 2 === 0;
-    const n = el(`<div class="abs" style="left:${nx(i) - 22}px;top:${ny(i) - 22}px;width:44px;height:44px;border-radius:50%;border:2px solid ${paid || cur ? '#E6BFA4' : 'rgba(244,238,232,.35)'};background:#041E42;display:flex;align-items:center;justify-content:center">
-        <div class="f" style="width:30px;height:30px;border-radius:50%;background:${cur ? 'transparent' : 'linear-gradient(100deg,#B07A63,#E6BFA4)'};display:flex;align-items:center;justify-content:center">${paid ? ICON.check.replace('<svg', '<svg width="16" height="16"') : ''}</div></div>`, TR);
-    const lb = el(`<div class="abs" style="left:${nx(i) - 110}px;top:${ny(i) + (up ? -112 : 40)}px;width:220px;text-align:center"><div style="font-size:22px;color:#F4EEE8">${name}</div><div class="label" style="font-size:13px;margin-top:6px;color:${paid ? '#D6A58C' : cur ? '#F3D2B8' : 'rgba(244,238,232,.5)'}">${i + 1} · ${st}</div></div>`, TR);
+    const n = el(`<div class="abs" style="left:${nx(i) - 28}px;top:${ny(i) - 28}px;width:56px;height:56px;border-radius:50%;border:2px solid ${paid || cur ? '#E6BFA4' : 'rgba(244,238,232,.35)'};background:#041E42;display:flex;align-items:center;justify-content:center">
+        <div class="f" style="width:40px;height:40px;border-radius:50%;background:${cur ? 'transparent' : paid ? 'linear-gradient(100deg,#B07A63,#E6BFA4)' : 'rgba(244,238,232,.08)'};display:flex;align-items:center;justify-content:center">${paid ? ICON.check.replace('<svg', '<svg width="20" height="20"') : ''}</div></div>`, TR);
+    const lb = el(`<div class="abs" style="left:${nx(i) - 150}px;top:${ny(i) + (up ? -128 : 50)}px;width:300px;text-align:center;white-space:nowrap">
+        <div style="font-size:15px;letter-spacing:.18em;color:rgba(244,238,232,.5)">MILESTONE ${i + 1}</div>
+        <div style="font-size:28px;color:#F4EEE8;margin-top:4px">${name}</div>
+        <div style="font-size:19px;margin-top:4px;color:${paid ? '#D6A58C' : cur ? '#F3D2B8' : 'rgba(244,238,232,.55)'}">${st}</div></div>`, TR);
     const f = n.querySelector('.f');
     if (paid) { gsap.set(f, { scale: 0 }); tl.to(f, { scale: 1, duration: 0.3, ease: 'back.out(2.5)' }, lit(i)); }
     tl.fromTo(n, { autoAlpha: 0, scale: 0.4 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'back.out(2)', immediateRender: true }, Math.min(lit(i), tEu) - 0.25);
     tl.fromTo(lb, { autoAlpha: 0, y: up ? 12 : -12 }, { autoAlpha: 1, y: 0, duration: 0.35, ease: EASE, immediateRender: true }, Math.min(lit(i), tEu) - 0.15);
     if (cur) [0, 1, 2].forEach(k => {
-      const ring = el(`<div class="abs" style="left:${nx(i) - 22}px;top:${ny(i) - 22}px;width:44px;height:44px;border-radius:50%;border:2px solid #E6BFA4"></div>`, TR);
+      const ring = el(`<div class="abs" style="left:${nx(i) - 28}px;top:${ny(i) - 28}px;width:56px;height:56px;border-radius:50%;border:2px solid #E6BFA4"></div>`, TR);
       tl.fromTo(ring, { scale: 1, opacity: 0.9 }, { scale: 2.6, opacity: 0, duration: 1.2, repeat: 1, ease: 'power1.out', immediateRender: true }, lit(i) + k * 0.4);
     });
   });
-  tl.fromTo(TR, { x: 260 }, { x: -980, duration: tT - tEp + 0.2, ease: 'power1.inOut', immediateRender: true }, tEp - 0.35);
-  const pc = el(`<div class="card dark" style="left:1290px;top:110px;width:500px;padding:28px 32px;border-radius:26px">
-      <div class="label" style="font-size:14px;color:#D6A58C">Paid to date</div>
-      <div style="display:flex;align-items:baseline;gap:14px;margin-top:10px"><span style="font-size:58px;font-weight:300">SAR <span class="n">0</span></span><span style="opacity:.6;font-size:22px">of 1,200,000</span></div>
-      <div style="margin-top:16px;height:8px;border-radius:4px;background:rgba(244,238,232,.12)"><div class="b" style="height:8px;width:0;border-radius:4px;background:linear-gradient(90deg,#B07A63,#E6BFA4)"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:20px;opacity:.75"><span><span class="k">0</span> of 12 milestones paid</span><span><span class="pc">0</span>%</span></div></div>`, JL);
+  tl.fromTo(TR, { x: 300 }, { x: 960 - nx(7), duration: tT - tEp + 0.2, ease: 'power1.inOut', immediateRender: true }, tEp - 0.35);   // ends with the current milestone centred
+  const pc = el(`<div class="card dark" style="left:1180px;top:110px;width:600px;padding:32px 38px;border-radius:28px;white-space:nowrap">
+      <div style="font-size:16px;letter-spacing:.2em;color:#D6A58C">PAID TO DATE</div>
+      <div style="font-size:66px;font-weight:300;margin-top:10px;line-height:1">SAR <span class="n">0</span></div>
+      <div style="font-size:22px;opacity:.65;margin-top:10px">of SAR 1,200,000 total</div>
+      <div style="margin-top:22px;height:10px;border-radius:5px;background:rgba(244,238,232,.12)"><div class="b" style="height:10px;width:0;border-radius:5px;background:linear-gradient(90deg,#B07A63,#E6BFA4)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:22px;opacity:.8"><span><span class="k">0</span> of 12 milestones paid</span><span><span class="pc">0</span>%</span></div></div>`, JL);
   gsap.set(pc, { autoAlpha: 0 }); pop(pc, tEp + 0.1);
   count(pc.querySelector('.n'), 0, 660000, tEp + 0.2, 2.0, v => Math.round(v).toLocaleString('en-US'));
   count(pc.querySelector('.k'), 0, 7, tEp + 0.2, 2.0); count(pc.querySelector('.pc'), 0, 55, tEp + 0.2, 2.0);
@@ -768,11 +773,12 @@ let hero, portalHome, portalEnjoy;
   // construction tracking
   setPoseAt(p, tT - 1.1, { x: 640, ry: 12 });
   const s15 = swap(p, 'ui:15', tT - 1.1, 'fade');
+  tl.set(p, { autoAlpha: 0 }, tT - 1.1);              // stays hidden until the journey has gone
   onUI(s15, (d, q) => {
     uiCount(d, '68%', tT + 0.3, 1.6);
     uiRise([q('section'), ...q.all('.col')], tT - 0.1, { stagger: 0.06, y: 18 });
   });
-  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.7);
+  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.62);
   const big = el('<div class="abs h0 cream" style="left:1060px;top:300px;font-size:220px"><span class="w n">0%</span></div>', L);
   gsap.set(big, { autoAlpha: 0 }); reveal(big, tT, { stagger: 0 });
   count(big.querySelector('.n'), 0, 68, tT + 0.3, 1.6, v => Math.round(v) + '%');
@@ -925,7 +931,7 @@ let hero, portalHome, portalEnjoy;
   const WF = el('<div class="abs" data-ob="win" style="left:1000px;top:110px;width:780px;height:860px;border-radius:40px;overflow:hidden;box-shadow:0 50px 120px rgba(60,40,25,.35)"></div>', FL);
   gsap.set(WF, { autoAlpha: 0 }); tl.set(WF, { autoAlpha: 1 }, at('more connection') - 0.15);
   tl.fromTo(s11, { clipPath: 'inset(0% 0% 0% 0% round 0px)' }, { clipPath: 'inset(110px 140px 110px 1000px round 40px)', duration: 0.8, ease: 'power3.inOut', immediateRender: false }, TM - 0.4);
-  const wins = [['p14', at('more connection'), 3.6], ['p12', at('efficiency'), 3.6], ['p13', at('possibilities'), 0.2]];
+  const wins = [['p14', at('more connection'), 1.9], ['p12', at('efficiency'), 3.6], ['p13', at('possibilities'), 0.2]];
   wins.forEach(([nm, t, from], i) => {
     const b = el('<div class="abs" style="inset:0;overflow:hidden"></div>', WF);
     gclip(b, nm, t - 0.1, i < 2 ? wins[i + 1][1] + 0.6 : TN + 0.2, { from });
