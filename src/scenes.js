@@ -574,8 +574,9 @@ let hero, portalHome, portalEnjoy;
 
   // dive through the phone into the empty apartment that furnishes itself (P2)
   const P = zlayer(60); gsap.set(P, { autoAlpha: 0 }); portalHome = P;
-  P.style.background = 'radial-gradient(120% 100% at 60% 40%,#c9d3d8,#b9c3c9)';
-  const pw = el('<div class="abs" style="left:300px;top:60px;width:1620px;height:911px"></div>', P);
+  P.style.background = 'radial-gradient(120% 100% at 60% 35%,#c2cbcf,#bbc4c8)';   // the P2 render's own backdrop tone
+  // the model sits right of the captions; its edges feather into the matching background (no seam)
+  const pw = el('<div class="abs" style="left:760px;top:128px;width:1377px;height:774px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%);mask-composite:intersect"></div>', P);
   gclip(pw, 'p2', TE - 0.55, TV + 2.0, { from: 0 });
   portalOpen(P, TE - 0.55, screenRect(hero, 960), 0.85);
   tl.fromTo(pw, { scale: 1.08 }, { scale: 1.0, duration: TV - TE + 1.2, ease: 'power1.out', immediateRender: false }, TE - 0.55);
