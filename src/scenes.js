@@ -9,7 +9,7 @@ function swapWords(list, parent, mk, { useRise = false } = {}) {
   const els = list.map(([s]) => mk(s));
   els.forEach((e, i) => {
     useRise ? rise(e, list[i][1], { stagger: 0.04, dur: 0.6 }) : reveal(e, list[i][1], { stagger: 0.04, dur: 0.7 });
-    if (i < list.length - 1) hide(e, list[i + 1][1] - 0.1, 0.3, -18);
+    if (i < list.length - 1) hide(e, list[i + 1][1] - 0.24, 0.2, -18);   // gone before the next word rises in its place
   });
   return els;
 }
@@ -134,7 +134,7 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
   tl.fromTo(h2, { letterSpacing: '0.1em' }, { letterSpacing: '0em', duration: 1.6, ease: 'power2.out', immediateRender: false }, at('happiness'));
   [h1, h2, h3].forEach(e => hide(e, TW - 0.25, 0.3));
   const pr = ltext('That is why, at [ZOOD,]|luxury is not a promise|on paper.', 'h2 navy', 170, 250, C2, 'font-size:64px');
-  rise(pr, TW + 0.1, { lineGap: [TW + 0.1, at('luxury is not a promise')] }); hide(pr, TX - 0.45, 0.3);
+  rise(pr, TW + 0.1, { lineGap: [TW + 0.1, at('luxury is not a promise'), at('on paper')] }); hide(pr, TX - 0.45, 0.3);
   // a fine line-drawn document draws itself, then gives way to the brand line (no box, no hard shadow)
   const docW = el('<div class="abs" style="left:180px;top:540px;width:340px;height:300px"></div>', C2);
   const docS = svgEl(`<path d="M 30 20 H 200 L 250 70 V 270 H 30 Z"/><path d="M 200 20 V 70 H 250"/>
@@ -579,7 +579,7 @@ let hero, portalHome, portalEnjoy;
   gclip(pw, 'p2', TE - 0.55, TV + 2.0, { from: 0 });
   portalOpen(P, TE - 0.55, screenRect(hero, 960), 0.85);
   tl.fromTo(pw, { scale: 1.08 }, { scale: 1.0, duration: TV - TE + 1.2, ease: 'power1.out', immediateRender: false }, TE - 0.55);
-  rise(ltext('So you can find|your [perfect home,]', 'h1 navy', 120, 110, P), TE, { lineGap: [TE, at('your perfect home')] });
+  rise(ltext('So you can find|your [perfect home,]', 'h1 navy on-light', 120, 110, P), TE, { lineGap: [TE, at('your perfect home')] });
   rise(ltext('not just an empty room.', 'h2 navy', 124, 340, P, 'opacity:.8'), at('not just an empty'));
 
   // the held beat after "…empty room.": full-screen Package Details — every piece priced, the total, added to the selection
@@ -765,13 +765,13 @@ let hero, portalHome, portalEnjoy;
   upd.style.left = 'auto'; upd.style.right = '130px';
 
   // construction tracking
-  setPoseAt(p, tT - 0.7, { x: 640, ry: 12 });
-  const s15 = swap(p, 'ui:15', tT - 0.7, 'fade');
+  setPoseAt(p, tT - 1.1, { x: 640, ry: 12 });
+  const s15 = swap(p, 'ui:15', tT - 1.1, 'fade');
   onUI(s15, (d, q) => {
     uiCount(d, '68%', tT + 0.3, 1.6);
     uiRise([q('section'), ...q.all('.col')], tT - 0.1, { stagger: 0.06, y: 18 });
   });
-  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.35);
+  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.7);
   const big = el('<div class="abs h0 cream" style="left:1060px;top:300px;font-size:220px"><span class="w n">0%</span></div>', L);
   gsap.set(big, { autoAlpha: 0 }); reveal(big, tT, { stagger: 0 });
   count(big.querySelector('.n'), 0, 68, tT + 0.3, 1.6, v => Math.round(v) + '%');
