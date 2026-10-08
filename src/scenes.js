@@ -664,7 +664,7 @@ let hero, portalHome, portalEnjoy;
   tl.to(scan, { autoAlpha: 0, duration: 0.15 }, tF + 1.1);
   tl.to(fid.querySelector('g'), { stroke: '#E6BFA4', duration: 0.25 }, tF + 1.1);
   tl.to([scrim, fid], { autoAlpha: 0, duration: 0.3 }, tF + 1.35);
-  const idv = swap(p, 'ui:33', tF + 1.3, 'fade');
+  const idv = swap(p, 'ui:33', tF + 1.25);
   onUI(idv, (d, q) => { uiRise(q.all('.dr'), tF + 1.5, { stagger: 0.07, y: 14 }); });
 
   // request · visit · reserve — the reservation is the live "Your Selection" screen, P5 (the furnished plan) behind it
