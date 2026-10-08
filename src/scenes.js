@@ -608,14 +608,14 @@ let hero, portalHome, portalEnjoy;
   tl.fromTo(im, { scale: 1.08 }, { scale: 1, duration: tDx - tD + 0.6, ease: 'power1.out', immediateRender: false }, tD);
   tl.fromTo(dp, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: EASE, immediateRender: false }, tD + 0.3);
   tags.forEach((g, i) => {
-    const t = tD + 0.55 + i * 0.17, r = g.classList.contains('r');
+    const t = tD + 0.5 + i * 0.14, r = g.classList.contains('r');
     tl.fromTo(g, { autoAlpha: 0, clipPath: r ? 'inset(0 0 0 calc(100% - 48px) round 24px)' : 'inset(0 calc(100% - 48px) 0 0 round 24px)' },
       { autoAlpha: 1, clipPath: 'inset(0 0% 0 0% round 24px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, t);
     tl.fromTo(g.querySelector('i'), { scale: 0.3 }, { scale: 1, duration: 0.35, ease: 'back.out(2.6)', immediateRender: false }, t);
   });
-  count(dp.querySelector('.bd'), 0, 29800, tD + 0.55, 1.1, money);
-  count(dp.querySelector('.tt'), 0, 124775, tD + 0.6, 1.4, money);
-  const tPr = tD + 2.15;
+  count(dp.querySelector('.bd'), 0, 29800, tD + 0.5, 1.0, money);
+  count(dp.querySelector('.tt'), 0, 124775, tD + 0.55, 1.2, money);
+  const tPr = tD + 1.85;
   tl.fromTo(bt, { scale: 1 }, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.inOut', immediateRender: false }, tPr);
   tl.to(b1, { opacity: 0, duration: 0.12 }, tPr + 0.12); tl.to(b2, { opacity: 1, duration: 0.2 }, tPr + 0.26);
   tl.to(PD, { clipPath: 'inset(0% 100% 0% 0%)', duration: 0.7, ease: 'power3.inOut' }, tDx - 0.15);
