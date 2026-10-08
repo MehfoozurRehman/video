@@ -9,6 +9,7 @@ grainCanvas.width = grainCanvas.height = 256;
 const grain = el(`<div id="grain" style="background-image:url(${grainCanvas.toDataURL()})"></div>`, stage);
 el('<div id="vignette"></div>', stage);
 
+window.AR_MISSING = arabizeStage();                                  // Arabic film only
 window.DURATION = tl.duration();
 window.__seek = (t) => {
   tl.seek(t, false);

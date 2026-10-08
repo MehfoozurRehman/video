@@ -91,14 +91,14 @@ const ROSE_GRAD_SVG = `<defs><linearGradient id="rg" x1="0" x2="1"><stop offset=
     ['[More] presence.', TM, 'h1 cream', 'left:170px;top:440px'],
     ['[More] living.', tLv, 'h1 cream', 'left:1000px;top:440px'],
     ['[More]|personalization.', tPz + 0.2, 'h1 cream', 'left:140px;top:640px;text-shadow:0 8px 40px rgba(0,0,0,.4)'],
-    ['[More]', tCf, 'h1', 'left:20px;width:570px;top:470px;text-align:right'],
+    [IS_AR ? 'comfort.' : '[More]', tCf, IS_AR ? 'h1 cream' : 'h1', 'left:20px;width:570px;top:470px;text-align:right'],   // Arabic reads right to left: زود goes on the right
     ['[More] time for what truly matters.', tTm, 'h2 cream', `left:0;width:${W}px;top:110px;text-align:center`],
   ].map(([s, t, cls, st], i, arr) => {
     const e = text(s, cls, st, Ls); rise(e, t, { stagger: 0.05, dur: 0.6 });
     if (i < 3) hide(e, [ePr, eLv, ePz][i], 0.2);
     return e;
   });
-  const cf2 = ltext('comfort.', 'h1 cream', 1330, 470, Ls); rise(cf2, tCf + 0.08);
+  const cf2 = ltext(IS_AR ? '[More]' : 'comfort.', IS_AR ? 'h1' : 'h1 cream', 1330, 470, Ls); rise(cf2, tCf + (IS_AR ? -0.05 : 0.08));
   hide(moreTxt[3], eCf, 0.2); hide(cf2, eCf, 0.2); hide(moreTxt[4], T0 - 0.3, 0.3);
 
   // --- cream world (slides up with the kinked brand edge)
@@ -376,7 +376,8 @@ let hero, portalHome, portalEnjoy;
     tl.fromTo(L, { y: -9, rotation: -0.4 }, { y: 9, rotation: 0.4, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: n, immediateRender: false }, t0); }
   setPose(hero, { x: 960, y: 540, ry: 0, s: 0.85 });
   tl.fromTo(hero, { filter: 'brightness(2) blur(6px)' }, { filter: 'brightness(1) blur(0px)', duration: 0.7, ease: 'power2.out', immediateRender: false }, TZ + 0.7);
-  pose(hero, TZ + 0.9, { x: 1250, ry: -16, s: 1, dur: 1.1, ease: 'power3.inOut' });
+  { const room = at('explore every') - 0.8 - (TZ + 0.9);   // the glide right only when there is time before Discover moves the phone
+    if (room > 0.4) pose(hero, TZ + 0.9, { x: 1250, ry: -16, s: 1, dur: Math.min(1.1, room), ease: 'power3.inOut' }); }
   sheen(hero, TZ + 1.3, 1.2);
 }
 
@@ -434,6 +435,10 @@ let hero, portalHome, portalEnjoy;
   const ML = zlayer(60); gsap.set(ML, { autoAlpha: 0 });
   const mv = el('<div class="layer"></div>', ML);
   gclip(mv, 'model', tTap + 0.15, tS, { from: 1.45 });
+  if (IS_AR) {   // the client's model video has "01 — DISCOVER" burned in (top left): frame it out and use the Arabic label
+    gsap.set(mv, { scale: 1.15, transformOrigin: '100% 100%' });
+    chapterLabel('01', 'Discover', tTap + 0.4, tB - 0.2);
+  }
   el('<div class="layer" style="background:linear-gradient(270deg,rgba(2,12,31,.82),rgba(2,12,31,.55) 28%,rgba(2,12,31,0) 52%)"></div>', mv);
   portalOpen(ML, tTap + 0.15, screenRect(hero, 960), 0.75);
   const tr = ltext('Then tap,|rotate the model,|choose your unit,|and walk through|[your environment.]', 'h3 cream', 1400, 300, ML, 'line-height:1.7;text-shadow:0 4px 24px rgba(0,0,0,.45)');
@@ -487,7 +492,7 @@ let hero, portalHome, portalEnjoy;
     tl.to(opts[k].querySelector('.on'), { opacity: 1, duration: 0.3 }, t);
     tl.to(opts[k].querySelector('.tx'), { color: '#0B1F44', duration: 0.3 }, t);
   });
-  htmlAt(meta, steps.map(([t, k]) => [t, `${PKG[k].pieces} · 4 rooms · excl. VAT`]), tEndA);
+  htmlAt(meta, steps.map(([t, k]) => [t, trUI(`${PKG[k].pieces} · 4 rooms · excl. VAT`)]), tEndA);
   tl.fromTo(go, { scale: 1 }, { scale: 0.88, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.inOut', immediateRender: false }, tSel - 0.2);
   tl.fromTo(opts[1].querySelector('.ck'), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2.4)', immediateRender: false }, tSel);
   tl.fromTo(PK, { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power3.inOut', immediateRender: false }, tA);
@@ -722,7 +727,8 @@ let hero, portalHome, portalEnjoy;
   const tEp = at('every payment'), tEs = at('every stage'), tEu = at('every update'), tT = at('track the progress');
   tl.to(p, { x: 700, autoAlpha: 0, duration: 0.5, ease: 'power3.in' }, tEp - 0.45);
   const JL = el('<div class="layer"></div>', L); gsap.set(JL, { autoAlpha: 0 });
-  tl.to(JL, { autoAlpha: 1, duration: 0.4 }, tEp - 0.35); tl.to(JL, { autoAlpha: 0, duration: 0.35 }, tT - 1.0);
+  tl.to(JL, { autoAlpha: 1, duration: 0.4 }, tEp - 0.35); const jlOut = Math.max(tEu + 0.5, tT - 1.0);          // the path stays until "every update" has been seen
+  tl.to(JL, { autoAlpha: 0, duration: 0.35 }, jlOut);
   const ev = ltext('Every payment.|Every stage.|Every update.', 'h2 cream', 150, 120, JL, 'line-height:1.3');
   rise(ev, tEp, { lineGap: [tEp, tEs, tEu] });
   focusLine(ev, 0, tEp); focusLine(ev, 1, tEs); focusLine(ev, 2, tEu);
@@ -771,14 +777,14 @@ let hero, portalHome, portalEnjoy;
   upd.style.left = 'auto'; upd.style.right = '130px';
 
   // construction tracking
-  setPoseAt(p, tT - 1.1, { x: 640, ry: 12 });
-  const s15 = swap(p, 'ui:15', tT - 1.1, 'fade');
-  tl.set(p, { autoAlpha: 0 }, tT - 1.1);              // stays hidden until the journey has gone
+  setPoseAt(p, jlOut - 0.1, { x: 640, ry: 12 });
+  const s15 = swap(p, 'ui:15', jlOut - 0.1, 'fade');
+  tl.set(p, { autoAlpha: 0 }, jlOut - 0.1);              // stays hidden until the journey has gone
   onUI(s15, (d, q) => {
     uiCount(d, '68%', tT + 0.3, 1.6);
     uiRise([q('section'), ...q.all('.col')], tT - 0.1, { stagger: 0.06, y: 18 });
   });
-  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, tT - 0.62);
+  tl.fromTo(p, { x: -260, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.8, ease: 'power3.out', immediateRender: false }, jlOut + 0.38);
   const big = el('<div class="abs h0 cream" style="left:1060px;top:300px;font-size:220px"><span class="w n">0%</span></div>', L);
   gsap.set(big, { autoAlpha: 0 }); reveal(big, tT, { stagger: 0 });
   count(big.querySelector('.n'), 0, 68, tT + 0.3, 1.6, v => Math.round(v) + '%');
@@ -997,7 +1003,7 @@ let hero, portalHome, portalEnjoy;
   lineSweep(T0 - 0.45, L, { dir: -1 });
   chapterLabel('04', 'Enjoy', T0 + 0.4, TX - 0.5);
   const fi = ltext('For those who invest|in what we build,|[there is something more.]', 'h2 cream', 160, 330, L);
-  rise(fi, T0 + 0.35, { lineGap: [T0 + 0.35, at('in what we build'), at('there is something more')] }); hide(fi, TS - 0.3, 0.35);
+  rise(fi, T0 + 0.35, { lineGap: [T0 + 0.35, at('in what we build'), at('there is something more')] }); hide(fi, TS - 0.55, 0.25);
   // NEW — flowing lines rise into a curve (from the animatic)
   const FLW = svgEl([0, 1, 2].map(i => `<path class="fw" d="M -40 ${720 + i * 34} C 500 ${720 + i * 34} 800 ${720 + i * 34} 1960 ${720 + i * 34}" stroke="${i ? 'rgba(155,203,235,.45)' : '#E6BFA4'}"/>`).join(''), { sw: 2.2 }, L);
   gsap.set(FLW, { autoAlpha: 0 }); tl.set(FLW, { autoAlpha: 1 }, T0 + 0.3);
@@ -1012,10 +1018,10 @@ let hero, portalHome, portalEnjoy;
   onUI(yo, (d, q) => { uiRise(q.all('body *').filter(e => /Estimated Yield/.test(e.textContent) && e.children.length > 2 && e.getBoundingClientRect().height < 80), TS + 0.3, { stagger: 0.12 }); });
   setPose(pb, { x: 900, y: 1700, ry: 22, s: 0.86 });
   pose(pb, at('long term') - 0.6, { x: 900, y: 540, ry: 22, s: 0.86, dur: 0.9, ease: 'power3.out' });
-  pose(p, TS - 0.4, { x: 560, y: 540, ry: 12, s: 1, dur: 0.9, ease: 'power3.inOut' });
+  pose(p, TS - 0.3, { x: 560, y: 540, ry: 12, s: 1, dur: 0.55, ease: 'power3.inOut' });   // after the last caption has gone, clear of the next one
   sheen(p, TS + 0.8);
   const mk = ltext('A smarter way to make|your property [work for you.]', 'h2 cream', 1140, 260, L, 'font-size:60px');
-  rise(mk, TS, { lineGap: [TS, at('your property work for you')] });
+  rise(mk, TS + 0.1, { lineGap: [TS + 0.1, at('your property work for you')] });
   const caps = [['Long-term leasing.', at('long term')], ['Short stays.', at('short stays')], ['Or selling.', at('or selling')]];
   const ym = swap(p, 'ui:30', at('long term') - 0.45);
   onUI(ym, (d, q) => {

@@ -121,3 +121,9 @@ svg.lines path { fill: none; }
 .app .tag i::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
 .app .tag b { font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 19px; }
 .on-light .rose { background: linear-gradient(100deg, #7A4A3C 0%, #A27063 50%, #6E4234 100%); -webkit-background-clip: text; background-clip: text; }
+
+/* ---------- Arabic film ---------- */
+.ar { direction: rtl; letter-spacing: 0 !important; width: max-content; }
+.lang-ar .label, .lang-ar .ar * { letter-spacing: 0 !important; }
+.lang-ar .ar-ui { direction: rtl; letter-spacing: 0 !important; }
+.lang-ar .app { font-family: Figtree, Huwiya, sans-serif; }

@@ -43,7 +43,18 @@ function rng(seed) {
 
 // ---------- text ----------
 // text: string; "|" forces a line break; words wrapped in [..] get the rose-gold treatment.
+// Arabic film: every caption is swapped for its approved Arabic line (captions-ar.js) and set right-to-left.
+const IS_AR = typeof window !== 'undefined' && window.LANG === 'ar';
+function tr(s) {
+  if (!IS_AR) return s;
+  if (s in AR) return AR[s];
+  if (/[A-Za-z]{2}/.test(s) && !/^zood\.sa$/.test(s)) console.error('no Arabic for: ' + s);
+  return s;
+}
+const trUI = (s) => (IS_AR && typeof AR_UI !== 'undefined' && s in AR_UI ? AR_UI[s] : s);
 function text(str, cls, style = '', parent) {
+  str = tr(str);
+  if (IS_AR) cls += ' ar';
   const lines = str.split('|').map(line => {
     const parts = line.trim().match(/\[[^\]]+\]|\S+/g) || [];
     return '<span class="line">' + parts.map((p, i) => {
@@ -211,6 +222,7 @@ function rise(e, t, { stagger = 0.05, dur = 0.85, lineGap = null } = {}) {
   tl.set(e, { autoAlpha: 1 }, t);
   e.querySelectorAll('.line').forEach((ln, i) => {
     ln.style.overflow = 'hidden'; ln.style.paddingBottom = '0.12em'; ln.style.marginBottom = '-0.12em';
+    if (!ln.querySelector('.w')) return;          // an empty line (an Arabic caption can be shorter)
     tl.fromTo(ln.querySelectorAll('.w'), { yPercent: 115, opacity: 1 }, { yPercent: 0, duration: dur, stagger, ease: 'power4.out', immediateRender: true },
       t + (lineGap == null ? i * 0.12 : (Array.isArray(lineGap) ? lineGap[i] - t : i * lineGap)));
   });
@@ -371,4 +383,25 @@ function loupe(parent, src, phoneCx, phoneCy, p, path, t0, t1, { r = 130, zoom =
   });
   tl.to(L, { autoAlpha: 0, scale: 0.4, duration: 0.3 }, t1 - 0.3);
   return L;
+}
+
+// Arabic film: labels inside the film's own UI (chapter labels, chips, cards, the packages screens) are
+// translated in place after the scenes are built. Phone screens are the client's designs and stay English.
+function arabizeStage() {
+  if (!IS_AR) return [];
+  stage.classList.add('lang-ar');
+  const missing = new Set();
+  const skip = (n) => n.closest('.ph-screen, iframe, .ar, svg');
+  const walker = document.createTreeWalker(stage, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+  for (const n of nodes) {
+    const p = n.parentElement, t = n.textContent.trim();
+    if (!p || skip(p) || !/[A-Za-z]{2}/.test(t)) continue;
+    const ar = AR_CHAPTER[t] ?? AR_UI[t] ?? AR[t];
+    if (ar == null) { missing.add(t); continue; }
+    n.textContent = n.textContent.replace(t, ar);
+    p.classList.add('ar-ui');
+  }
+  return [...missing];
 }

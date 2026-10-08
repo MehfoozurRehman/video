@@ -52,7 +52,7 @@ for (let t = start; t <= end; t += step) {
         if (R - L <= 6 || B - T <= 6) continue;
         const top = hit((L + R) / 2, (T + B) / 2);
         if (!top) continue;
-        if (o.contains(top) && wordShown) out.push(`BEHIND "${w.textContent.trim()}" × ${o.className || o.dataset.ob} (${Math.round(R - L)}×${Math.round(B - T)})`);
+        if (o.contains(top) && (wordShown || o.contains(wh))) out.push(`BEHIND "${w.textContent.trim()}" × ${o.className || o.dataset.ob} (${Math.round(R - L)}×${Math.round(B - T)})`);
         else if ((w.contains(top) || top.contains(w)) && (o.contains(hit((b.left + b.right) / 2, (b.top + b.bottom) / 2)))) out.push(`OVER "${w.textContent.trim()}" × ${o.className || o.dataset.ob} (${Math.round(R - L)}×${Math.round(B - T)})`);
       }
     }
