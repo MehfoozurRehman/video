@@ -1,9 +1,10 @@
 import { chromium } from 'playwright-core';
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
 
-export const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const EXE = process.env.CHROME || '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell';
+export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+import { chromePath } from './browser.mjs';
+const EXE = chromePath();
 
 export async function openFilm() {
   const browser = await chromium.launch({

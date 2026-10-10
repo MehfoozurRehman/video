@@ -1,11 +1,13 @@
 # ZOOD — App Launch Film
 
+> **Continuing this project? Start with [`HANDOFF.md`](HANDOFF.md).** It covers setup, every command, how the code works, the client's rules, the open items and a security warning about `main`. The full conversation is in [`history/`](history/ZOOD_chat_history.md). The latest films are in [`deliverables/`](deliverables/).
+
 A 2:54 landscape (1920×1080, 60fps) launch film for the ZOOD mobile app, built as code:
 an HTML/CSS stage animated by a single paused GSAP timeline, rendered frame-by-frame with
 headless Chromium (Playwright) and encoded with ffmpeg.
 
 ## Two films
-- **Video A** (v5) — `src/index.html` + `src/scenes.js` + `src/lib-a.js` (floating 3D phone, travelling frame, portals, the new tapered brand line, generated clips with app UI mapped onto green phone/tablet screens).
+- **Video A** (v8) — `src/index.html` (English), `src/index-ar.html` (Arabic), `src/index-enar.html` (English on the Arabic voice) + `src/scenes.js` + `src/lib-a.js` (floating 3D phone, travelling frame, portals, the new tapered brand line, generated clips with app UI mapped onto green phone/tablet screens).
 - **Video B** — `src/b.html` + `src/scenes-b.js` (editorial rhythm: footage inside type and the ZOOD symbol, stripe wipes, split screens, sliding footage columns, marquee type, flat phones with UI annotations). Render with `FILM=b.html node render/render.mjs --out out/ZOOD_B.mp4`.
 
 Both share `src/lib.js`, `src/boot.js`, `src/style.css`, `src/vo.js` and the renderer.
@@ -24,15 +26,13 @@ Both share `src/lib.js`, `src/boot.js`, `src/style.css`, `src/vo.js` and the ren
 | `render/still.mjs` | Render stills at given times for review |
 | `src/vo.js` / `tools/vo-words.json` | Word-level timings of the edited voiceover (forced alignment); scenes cue off them via `at('phrase')` |
 
-## Assets (not in git)
-The repository is public, so client material is not committed. Place it in `src/assets/`:
-`fonts/` (ITF Huwiya Arabic TTFs), `screens/` (app screens), `photos/` (brand-book imagery),
-`brand/` (logo PNGs, App Store / Google Play SVGs), `clips/proj/` (project film as a 30 fps JPEG sequence: `ffmpeg -i film.mp4 -q:v 3 src/assets/clips/proj/f%05d.jpg`), `audio/vo-edit.wav` (voiceover with pauses tightened and 1.1× tempo), `photos/handover-clean.jpg` (Hand Over artwork with its text removed),
-`clips/gen/` (prepared clips: `python3 -I tools/prep_clips.py clips.json src/assets/clips/gen`).
+## Assets
+All assets are in git under `src/assets/` (fonts, app screens, clips as frame sequences, voiceovers, music, photos).
 
 ## Usage
 ```bash
 npm install
+npx playwright install chromium
 node render/still.mjs out/stills 10 65 120 198      # review frames
 node render/render.mjs --fps 60 --workers 4 --out out/ZOOD_App_Film_1080p60.mp4
 ```
