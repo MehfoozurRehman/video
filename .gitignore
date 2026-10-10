@@ -1,4 +1,7 @@
 node_modules/
 out/
+temp_auto_push.bat
 ffmpeg2pass-*
 clips-1080.zip
+.gitignore
+branch_structure.json
